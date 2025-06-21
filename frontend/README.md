@@ -1,70 +1,99 @@
-# Getting Started with Create React App
+# Sistema de Gestión de Proyectos - Frontend
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Este es el frontend para el Sistema de Gestión de Proyectos, una aplicación web desarrollada con React que permite administrar empleados, equipos y proyectos de una empresa.
 
-## Available Scripts
+## Tecnologías Utilizadas
 
-In the project directory, you can run:
+- **React**: Biblioteca JavaScript para construir interfaces de usuario
+- **React Router**: Enrutamiento para aplicaciones React
+- **Axios**: Cliente HTTP para realizar peticiones a la API
+- **Material-UI**: Biblioteca de componentes de interfaz de usuario
+- **Context API**: Gestión de estado global para la autenticación
+
+## Estructura del Proyecto
+
+```
+frontend/
+├── public/              # Archivos públicos y estáticos
+├── src/                 # Código fuente de la aplicación
+│   ├── components/      # Componentes reutilizables
+│   ├── context/         # Contextos de React (estado global)
+│   ├── pages/           # Páginas principales de la aplicación
+│   ├── services/        # Servicios para comunicación con la API
+│   ├── App.js           # Componente principal y rutas
+│   └── index.js         # Punto de entrada de la aplicación
+└── package.json         # Dependencias y scripts
+```
+
+## Principales Características
+
+- **Autenticación**: Sistema completo de registro, inicio de sesión y cierre de sesión con JWT
+- **Rutas Protegidas**: Acceso a rutas solo para usuarios autenticados
+- **Dashboard**: Panel principal con acceso a todas las funcionalidades
+- **Gestión de Empleados**: Administración de programadores y líderes
+- **Gestión de Equipos**: Creación y administración de equipos de trabajo
+- **Gestión de Proyectos**: Control de proyectos de gestión y multimedia
+- **Diseño Responsivo**: Interfaz adaptable a diferentes dispositivos
+
+## Componentes Principales
+
+### Autenticación
+
+- **Login**: Formulario de inicio de sesión
+- **Register**: Formulario de registro de usuarios
+- **AuthContext**: Contexto global para gestionar el estado de autenticación
+
+### Páginas
+
+- **Dashboard**: Panel principal con acceso a todas las funcionalidades
+- **Employees**: Gestión de empleados
+- **Teams**: Administración de equipos
+- **Projects**: Control de proyectos
+
+### Servicios
+
+- **authService**: Gestión de autenticación y manejo de tokens JWT
+- **employeeService**: Operaciones CRUD para empleados
+- **teamService**: Operaciones CRUD para equipos
+- **programmerService**: Operaciones específicas para programadores
+- **leaderService**: Operaciones específicas para líderes
+
+## Scripts Disponibles
+
+En el directorio del proyecto, puedes ejecutar:
 
 ### `npm start`
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+Ejecuta la aplicación en modo desarrollo.\
+Abre [http://localhost:3000](http://localhost:3000) para verla en el navegador.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+La página se recargará cuando hagas cambios.\
+También verás errores de lint en la consola.
 
 ### `npm test`
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+Inicia el ejecutor de pruebas en modo interactivo.\
+Consulta la sección sobre [ejecución de pruebas](https://facebook.github.io/create-react-app/docs/running-tests).
 
 ### `npm run build`
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+Compila la aplicación para producción en la carpeta `build`.\
+Empaqueta React en modo producción y optimiza la compilación para obtener el mejor rendimiento.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## Requisitos
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+- Node.js 14.0 o superior
+- npm 6.0 o superior
 
-### `npm run eject`
+## Configuración
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+Por defecto, el frontend está configurado para conectarse a la API backend en `http://localhost:8000`. Si necesitas cambiar esta URL, puedes modificar la variable `API_URL` en el archivo `src/services/authService.js`.
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## Características Adicionales
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- Manejo de tokens JWT para autenticación segura
+- Interceptores HTTP para incluir automáticamente el token en las peticiones
+- Sistema de notificaciones para feedback al usuario
+- Validación de formularios
+- Rutas protegidas y públicas basadas en el estado de autenticación
+- Diseño modular para facilitar el mantenimiento
