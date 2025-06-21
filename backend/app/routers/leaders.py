@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
-from ..database.database import get_db
-from ..api import operations
-from ..schemas import schemas
+from app.database.database import get_db
+from app.api import operations
+from app.schemas import schemas
 
 router = APIRouter(prefix="/leaders", tags=["leaders"])
 

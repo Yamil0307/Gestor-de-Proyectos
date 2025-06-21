@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
-from ...models import models
-from ...schemas import schemas
-from . import team_operations
+from app.models import models
+from app.schemas import schemas
+from app.api.operations import team_operations
 
 # ---- OPERACIONES CRUD PARA PROYECTOS ----
 def create_project(db: Session, project: schemas.ProjectCreate):

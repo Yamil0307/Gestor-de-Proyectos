@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
-from ...models import models
-from ...schemas import schemas
-from . import programmer_operations, leader_operations
+from app.models import models
+from app.schemas import schemas
+from app.api.operations import programmer_operations, leader_operations
 
 # ---- OPERACIONES CRUD PARA EQUIPOS (TEAMS) ----
 def create_team(db: Session, team: schemas.TeamCreate):

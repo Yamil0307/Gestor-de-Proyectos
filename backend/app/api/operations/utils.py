@@ -1,9 +1,9 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from ...models import models
-from ...schemas import schemas
+from app.models import models
+from app.schemas import schemas
 from typing import List
-from . import employee_operations, programmer_operations, leader_operations, project_operations
+from app.api.operations import employee_operations, programmer_operations, leader_operations, project_operations
 
 # ---- FUNCIONES DE UTILIDAD ----
 

@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
-from ...models import models
-from ...schemas import schemas
-from . import employee_operations
+from app.models import models
+from app.schemas import schemas
+from app.api.operations import employee_operations
 
 # ---- OPERACIONES CRUD PARA PROGRAMADORES ----
 def create_programmer(db: Session, programmer: schemas.ProgrammerCreate):

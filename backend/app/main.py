@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .database.database import engine
-from .models import models
-from .api.api import api_router
+from app.database.database import engine
+from app.models import models
+from app.api.api import api_router
 
 # Crear las tablas en la base de datos
 models.Base.metadata.create_all(bind=engine)
@@ -34,15 +34,12 @@ def read_root():
         "redoc": "/redoc"
     }
 
-@app.get("/")
-def read_root():
-    return {
-        "message": "Sistema de Gestión de Proyectos API",
-        "version": "1.0.0",
-        "docs": "/docs",
-        "redoc": "/redoc"
-    }
 
 @app.get("/health")
 def health_check():
     return {"status": "healthy"}
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)

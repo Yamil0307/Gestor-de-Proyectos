@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
-from ..database.database import get_db
-from ..schemas.schemas import Team, TeamCreate
-from ..api import operations
-from ..api.dependencies import get_current_active_user
+from app.database.database import get_db
+from app.schemas.schemas import Team, TeamCreate
+from app.api import operations
+from app.api.dependencies import get_current_active_user
 
 router = APIRouter(prefix="/teams", tags=["teams"])
 

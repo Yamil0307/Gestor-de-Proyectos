@@ -3,9 +3,9 @@ from datetime import datetime, timedelta
 from jose import JWTError, jwt
 from typing import Optional
 from passlib.context import CryptContext
-from ..models.models import User
-from ..schemas.auth_schemas import UserCreate, TokenData
-from ..config import settings
+from app.models.models import User
+from app.schemas.auth_schemas import UserCreate, TokenData
+from app.config import settings
 
 # Contexto de encriptación para contraseñas
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")

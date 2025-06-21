@@ -4,10 +4,10 @@ from sqlalchemy.orm import Session
 from jose import JWTError, jwt
 from typing import Optional
 from datetime import datetime
-from ..schemas.auth_schemas import TokenData
-from ..database.database import get_db
-from ..config import settings
-from . import auth
+from app.schemas.auth_schemas import TokenData
+from app.database.database import get_db
+from app.config import settings
+from app.api import auth
 
 # Esquema OAuth2 para obtener el token
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")

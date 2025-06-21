@@ -1,9 +1,9 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from ..models import models
-from ..schemas import schemas
+from app.models import models
+from app.schemas import schemas
 from typing import List
-from . import operations
+from app.api import operations
 
 # ---- FUNCIONES DE UTILIDAD ----
 

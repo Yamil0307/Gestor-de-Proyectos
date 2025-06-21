@@ -1,9 +1,8 @@
-from sqlalchemy import Column, Integer, String, Text, DECIMAL, ForeignKey, CheckConstraint, CHAR, Boolean, DateTime
+from sqlalchemy import Column, Integer, String, Text, Float, ForeignKey, CheckConstraint, Boolean, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from datetime import datetime
-
-Base = declarative_base()
+from app.database.database import Base
 
 # NUEVO: Modelo para usuarios admin
 class User(Base):
@@ -24,7 +23,7 @@ class Employee(Base):
     name = Column(String(100), nullable=False)
     age = Column(Integer, nullable=False)
     sex = Column(String(10), nullable=False)
-    base_salary = Column(DECIMAL(10, 2), nullable=False)
+    base_salary = Column(Float, nullable=False)  # Cambiado de DECIMAL a Float para SQLite
     type = Column(String(20), nullable=False)
     
     __table_args__ = (
@@ -35,7 +34,7 @@ class Programmer(Base):
     __tablename__ = "programmers"
     
     employee_id = Column(Integer, ForeignKey('employees.id'), primary_key=True)
-    category = Column(CHAR(1), nullable=False)
+    category = Column(String(1), nullable=False)  # Cambiado de CHAR a String para SQLite
     
     employee = relationship("Employee")
     
@@ -80,7 +79,7 @@ class Project(Base):
     name = Column(String(100), nullable=False)
     description = Column(Text)
     estimated_time = Column(Integer, nullable=False)
-    price = Column(DECIMAL(10, 2), nullable=False)
+    price = Column(Float, nullable=False)  # Cambiado de DECIMAL a Float para SQLite
     type = Column(String(20), nullable=False)
     team_id = Column(Integer, ForeignKey('teams.id'), unique=True)
     

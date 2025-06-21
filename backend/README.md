@@ -6,7 +6,7 @@ Este es el backend para el Sistema de Gestión de Proyectos, una aplicación dis
 
 - **FastAPI**: Framework de Python para crear APIs RESTful de manera rápida
 - **SQLAlchemy**: ORM para interactuar con la base de datos
-- **PostgreSQL**: Base de datos relacional
+- **SQLite**: Base de datos relacional integrada y sin servidor
 - **Pydantic**: Validación de datos y serialización
 - **JWT (JSON Web Tokens)**: Autenticación y autorización
 - **Python-dotenv**: Gestión de variables de entorno
@@ -79,7 +79,6 @@ Python 3.8 o superior y las siguientes dependencias:
 - fastapi 0.104.1
 - uvicorn 0.24.0
 - sqlalchemy 2.0.23
-- psycopg2-binary 2.9.9
 - python-dotenv 1.0.0
 - pydantic 2.5.0
 - python-multipart 0.0.6
@@ -89,10 +88,10 @@ Python 3.8 o superior y las siguientes dependencias:
 
 ## Configuración
 
-1. Crear un archivo `.env` en la raíz del proyecto con las siguientes variables:
+1. Crear un archivo `.env` en la raíz del proyecto con las siguientes variables (opcional, hay valores por defecto):
 
 ```
-DATABASE_URL=postgresql://usuario:contraseña@localhost:5432/nombre_db
+DATABASE_URL=sqlite:///ruta/a/tu/proyecto/project_management.db
 SECRET_KEY=tu_clave_secreta_para_jwt
 ```
 
@@ -102,10 +101,20 @@ SECRET_KEY=tu_clave_secreta_para_jwt
 pip install -r requirements.txt
 ```
 
-3. Probar la conexión a la base de datos:
+3. Inicializar la base de datos SQLite:
 
 ```bash
-python test_connection.py
+# Método 1: Usando el script de inicialización
+./init_sqlite.sh
+
+# Método 2: Manual
+python -m app.initialize_db
+```
+
+4. Probar la conexión a la base de datos:
+
+```bash
+python test_sqlite_connection.py
 ```
 
 ## Ejecución
@@ -128,6 +137,7 @@ La documentación interactiva estará disponible en:
 
 ## Características
 
+- Base de datos SQLite (sin necesidad de servidor externo)
 - Autenticación JWT
 - Validación de datos con Pydantic
 - CRUD completo para todas las entidades
