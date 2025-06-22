@@ -1,51 +1,63 @@
 import React from 'react';
+import { Box, Typography, Select, MenuItem, TextField, Button, Grid } from '@mui/material';
+import DeleteIcon from '@mui/icons-material/Delete';
+import AddIcon from '@mui/icons-material/Add';
 
 const ProgrammerFields = ({ formData, handleInputChange, handleLanguageChange, addLanguage, removeLanguage }) => {
   return (
     <>
-      <div className="form-group">
-        <label>Categoría:</label>
-        <select
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="subtitle2" sx={{ mb: 1 }}>Categoría:</Typography>
+        <Select
           name="category"
           value={formData.category}
           onChange={handleInputChange}
           required
+          fullWidth
         >
-          <option value="A">Categoría A</option>
-          <option value="B">Categoría B</option>
-          <option value="C">Categoría C</option>
-        </select>
-      </div>
+          <MenuItem value="A">Categoría A</MenuItem>
+          <MenuItem value="B">Categoría B</MenuItem>
+          <MenuItem value="C">Categoría C</MenuItem>
+        </Select>
+      </Box>
 
-      <div className="form-group">
-        <label>Lenguajes de Programación:</label>
+      <Box sx={{ mb: 2 }}>
+        <Typography variant="subtitle2" sx={{ mb: 1 }}>Lenguajes de Programación:</Typography>
         {formData.languages.map((language, index) => (
-          <div key={index} className="language-input">
-            <input
+          <Box key={index} sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+            <TextField
               type="text"
               value={language}
               onChange={(e) => handleLanguageChange(index, e.target.value)}
               placeholder="Ej: Python, JavaScript, Java"
+              fullWidth
+              size="small"
+              sx={{ mr: 1 }}
             />
             {formData.languages.length > 1 && (
-              <button
-                type="button"
+              <Button
+                variant="outlined"
+                color="error"
+                size="small"
                 onClick={() => removeLanguage(index)}
-                className="remove-language"
+                startIcon={<DeleteIcon />}
               >
-                ×
-              </button>
+                Eliminar
+              </Button>
             )}
-          </div>
+          </Box>
         ))}
-        <button
-          type="button"
+        <Button
+          variant="outlined"
+          color="primary"
+          size="small"
           onClick={addLanguage}
-          className="add-language"
+          startIcon={<AddIcon />}
+          sx={{ mt: 1 }}
         >
-          + Agregar Lenguaje
-        </button>
-      </div>
+          Agregar Lenguaje
+        </Button>
+      </Box>
     </>
   );
 };

@@ -77,7 +77,14 @@ export const teamService = {
       return response.data;
     } catch (error) {
       console.error('Error en deleteTeam:', error);
-      if (error.response) {
+      
+      // Si hay respuesta del servidor y tiene formato de error específico
+      if (error.response && error.response.status === 400) {
+        throw {
+          detail: error.response.data.detail || 'No se puede eliminar este equipo',
+          status: error.response.status
+        };
+      } else if (error.response) {
         throw error.response.data;
       } else {
         throw {
@@ -131,8 +138,18 @@ export const teamService = {
     } catch (error) {
       console.error('Error en removeTeamMember:', error);
       if (error.response) {
-        throw error.response.data;
+        // Si tenemos un error de respuesta del servidor
+        if (error.response.status === 422) {
+          // Error de validación
+          throw {
+            detail: error.response.data.detail || 'No se puede remover este miembro del equipo',
+            status: 422
+          };
+        } else {
+          throw error.response.data;
+        }
       } else {
+        // Si no hay respuesta (error de red, CORS, etc.)
         throw {
           detail: error.message || 'Error de conexión con el servidor'
         };

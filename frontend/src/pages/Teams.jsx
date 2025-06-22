@@ -5,12 +5,13 @@ import { leaderService } from '../services/leaderService';
 import { programmerService } from '../services/programmerService';
 import { employeeService } from '../services/employeeService';
 import { useNotification } from '../context/NotificationContext.jsx';
+import { useConfirmation } from '../context/ConfirmationContext.jsx';
+import { processApiError } from '../utils/errorUtils';
 import TeamLoading from '../components/teams/TeamLoading';
 import TeamsList from '../components/teams/TeamsList';
 import TeamsHeader from '../components/teams/TeamsHeader';
 import TeamFormDialog from '../components/teams/TeamFormDialog';
 import TeamMembersDialog from '../components/teams/TeamMembersDialog';
-import './Teams.css';
 
 const Teams = () => {
   const [teams, setTeams] = useState([]);
@@ -24,6 +25,7 @@ const Teams = () => {
   const [teamMembers, setTeamMembers] = useState([]);
   const [editingTeam, setEditingTeam] = useState(null);
   const { showSuccess, showError, showWarning } = useNotification();
+  const { showConfirmation } = useConfirmation();
   const [formData, setFormData] = useState({
     name: '',
     leader_id: ''
@@ -49,22 +51,8 @@ const Teams = () => {
       setEmployees(employeesData);
     } catch (error) {
       console.error('Error al cargar datos:', error);
-      let errorMessage = 'Error al cargar datos';
-      
-      if (error.response?.data?.detail) {
-        // Si es un array, toma el primer mensaje
-        if (Array.isArray(error.response.data.detail)) {
-          errorMessage = error.response.data.detail[0]?.msg || errorMessage;
-        } else {
-          errorMessage = error.response.data.detail;
-        }
-      } else if (typeof error.detail === 'string') {
-        errorMessage = error.detail;
-      } else if (typeof error.message === 'string') {
-        errorMessage = error.message;
-      }
-      
-      showError(errorMessage);
+      const { message } = processApiError(error, { defaultMessage: 'Error al cargar datos' });
+      showError(message);
     } finally {
       setLoading(false);
     }
@@ -122,22 +110,8 @@ const Teams = () => {
       loadAllData();
     } catch (error) {
       console.error('Error al guardar equipo:', error);
-      let errorMessage = 'Error al guardar equipo';
-      
-      if (error.response?.data?.detail) {
-        // Si es un array, toma el primer mensaje
-        if (Array.isArray(error.response.data.detail)) {
-          errorMessage = error.response.data.detail[0]?.msg || errorMessage;
-        } else {
-          errorMessage = error.response.data.detail;
-        }
-      } else if (typeof error.detail === 'string') {
-        errorMessage = error.detail;
-      } else if (typeof error.message === 'string') {
-        errorMessage = error.message;
-      }
-      
-      showError(errorMessage);
+      const { message } = processApiError(error, { defaultMessage: 'Error al guardar equipo' });
+      showError(message);
     }
   };
 
@@ -151,29 +125,24 @@ const Teams = () => {
   };
 
   const handleDelete = async (team) => {
-    if (window.confirm('¿Estás seguro de eliminar este equipo?')) {
+    const confirmed = await showConfirmation({
+      title: 'Eliminar Equipo',
+      message: `¿Estás seguro de eliminar el equipo "${team.name}"? Esta acción no se puede deshacer.`,
+      confirmButtonText: 'Eliminar',
+      cancelButtonText: 'Cancelar',
+      severity: 'error'
+    });
+    
+    if (confirmed) {
       try {
         await teamService.deleteTeam(team.id);
         showSuccess('Equipo eliminado exitosamente');
-        loadAllData();    } catch (error) {
-      console.error('Error al eliminar equipo:', error);
-      let errorMessage = 'Error al eliminar equipo';
-      
-      if (error.response?.data?.detail) {
-        // Si es un array, toma el primer mensaje
-        if (Array.isArray(error.response.data.detail)) {
-          errorMessage = error.response.data.detail[0]?.msg || errorMessage;
-        } else {
-          errorMessage = error.response.data.detail;
-        }
-      } else if (typeof error.detail === 'string') {
-        errorMessage = error.detail;
-      } else if (typeof error.message === 'string') {
-        errorMessage = error.message;
+        loadAllData();
+      } catch (error) {
+        console.error('Error al eliminar equipo:', error);
+        const { message } = processApiError(error, { defaultMessage: 'Error al eliminar equipo' });
+        showError(message);
       }
-      
-      showError(errorMessage);
-    }
     }
   };
 
@@ -185,76 +154,63 @@ const Teams = () => {
       setShowMembersModal(true);
     } catch (error) {
       console.error('Error al cargar miembros del equipo:', error);
-      let errorMessage = 'Error al cargar miembros del equipo';
-      
-      if (error.response?.data?.detail) {
-        // Si es un array, toma el primer mensaje
-        if (Array.isArray(error.response.data.detail)) {
-          errorMessage = error.response.data.detail[0]?.msg || errorMessage;
-        } else {
-          errorMessage = error.response.data.detail;
-        }
-      } else if (typeof error.detail === 'string') {
-        errorMessage = error.detail;
-      } else if (typeof error.message === 'string') {
-        errorMessage = error.message;
-      }
-      
-      showError(errorMessage);
+      const { message } = processApiError(error, { defaultMessage: 'Error al cargar miembros del equipo' });
+      showError(message);
     }
   };
 
   const handleAddMember = async (programmerId) => {
-    try {
-      await teamService.addTeamMember(selectedTeam.id, programmerId);
-      const updatedMembers = await teamService.getTeamMembers(selectedTeam.id);
-      setTeamMembers(updatedMembers);
-      showSuccess('Miembro agregado al equipo exitosamente');
-    } catch (error) {
-      console.error('Error al agregar miembro al equipo:', error);
-      let errorMessage = 'Error al agregar miembro al equipo';
-      
-      if (error.response?.data?.detail) {
-        // Si es un array, toma el primer mensaje
-        if (Array.isArray(error.response.data.detail)) {
-          errorMessage = error.response.data.detail[0]?.msg || errorMessage;
-        } else {
-          errorMessage = error.response.data.detail;
-        }
-      } else if (typeof error.detail === 'string') {
-        errorMessage = error.detail;
-      } else if (typeof error.message === 'string') {
-        errorMessage = error.message;
+    // Buscar el nombre del programador
+    const programmer = programmers.find(p => p.employee_id === programmerId);
+    const employee = getEmployeeById(programmerId);
+    const programmerName = employee?.name || `Programador ${programmerId}`;
+    
+    const confirmed = await showConfirmation({
+      title: 'Agregar Miembro',
+      message: `¿Estás seguro de agregar a "${programmerName}" al equipo "${selectedTeam.name}"?`,
+      confirmButtonText: 'Agregar',
+      cancelButtonText: 'Cancelar',
+      severity: 'info'
+    });
+    
+    if (confirmed) {
+      try {
+        await teamService.addTeamMember(selectedTeam.id, programmerId);
+        const updatedMembers = await teamService.getTeamMembers(selectedTeam.id);
+        setTeamMembers(updatedMembers);
+        showSuccess('Miembro agregado al equipo exitosamente');
+      } catch (error) {
+        console.error('Error al agregar miembro al equipo:', error);
+        const { message } = processApiError(error, { defaultMessage: 'Error al agregar miembro al equipo' });
+        showError(message);
       }
-      
-      showError(errorMessage);
     }
   };
 
   const handleRemoveMember = async (programmerId) => {
-    try {
-      await teamService.removeTeamMember(selectedTeam.id, programmerId);
-      const updatedMembers = await teamService.getTeamMembers(selectedTeam.id);
-      setTeamMembers(updatedMembers);
-      showSuccess('Miembro removido del equipo exitosamente');
-    } catch (error) {
-      console.error('Error al remover miembro del equipo:', error);
-      let errorMessage = 'Error al remover miembro del equipo';
-      
-      if (error.response?.data?.detail) {
-        // Si es un array, toma el primer mensaje
-        if (Array.isArray(error.response.data.detail)) {
-          errorMessage = error.response.data.detail[0]?.msg || errorMessage;
-        } else {
-          errorMessage = error.response.data.detail;
-        }
-      } else if (typeof error.detail === 'string') {
-        errorMessage = error.detail;
-      } else if (typeof error.message === 'string') {
-        errorMessage = error.message;
+    // Buscar el nombre del programador
+    const member = teamMembers.find(m => m.programmer_id === programmerId);
+    const programmerName = member?.employee?.name || `Programador ${programmerId}`;
+    
+    const confirmed = await showConfirmation({
+      title: 'Remover Miembro',
+      message: `¿Estás seguro de remover a "${programmerName}" del equipo "${selectedTeam.name}"?`,
+      confirmButtonText: 'Remover',
+      cancelButtonText: 'Cancelar',
+      severity: 'warning'
+    });
+    
+    if (confirmed) {
+      try {
+        await teamService.removeTeamMember(selectedTeam.id, programmerId);
+        const updatedMembers = await teamService.getTeamMembers(selectedTeam.id);
+        setTeamMembers(updatedMembers);
+        showSuccess('Miembro removido del equipo exitosamente');
+      } catch (error) {
+        console.error('Error al remover miembro del equipo:', error);
+        const { message } = processApiError(error, { defaultMessage: 'Error al remover miembro del equipo' });
+        showError(message);
       }
-      
-      showError(errorMessage);
     }
   };
 
@@ -274,7 +230,9 @@ const Teams = () => {
   // Obtener programadores disponibles (no asignados al equipo actual)
   const getAvailableProgrammers = () => {
     if (!selectedTeam) return [];
+    // Extraer los IDs de los programadores que ya están en el equipo
     const memberIds = teamMembers.map(member => member.programmer_id);
+    // Filtrar los programadores que no están en el equipo
     return programmers.filter(programmer => !memberIds.includes(programmer.employee_id));
   };
 

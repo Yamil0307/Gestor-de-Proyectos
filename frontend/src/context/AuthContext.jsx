@@ -23,13 +23,25 @@ export const AuthProvider = ({ children }) => {
 
   const checkAuth = async () => {
     try {
-      if (authService.isAuthenticated()) {
-        const userData = await authService.getCurrentUser();
-        setUser(userData);
-        setIsAuthenticated(true);
+      const token = authService.getToken();
+      if (token) {
+        try {
+          const userData = await authService.getCurrentUser();
+          setUser(userData);
+          setIsAuthenticated(true);
+        } catch (error) {
+          console.error('Error verificando autenticación:', error);
+          // Si hay un error al verificar el usuario, asumimos que el token es inválido
+          authService.logout();
+          setUser(null);
+          setIsAuthenticated(false);
+        }
+      } else {
+        setUser(null);
+        setIsAuthenticated(false);
       }
     } catch (error) {
-      console.error('Error verificando autenticación:', error);
+      console.error('Error inesperado en verificación de autenticación:', error);
       authService.logout();
       setUser(null);
       setIsAuthenticated(false);

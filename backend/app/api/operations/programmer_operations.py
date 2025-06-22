@@ -76,6 +76,14 @@ def update_programmer(db: Session, programmer_id: int, programmer_update: schema
 
 def delete_programmer(db: Session, programmer_id: int):
     """Elimina un programador y sus datos relacionados"""
+    # Verificar si el programador está asignado a algún equipo
+    team_member = db.query(models.TeamMember).filter(
+        models.TeamMember.programmer_id == programmer_id
+    ).first()
+    
+    if team_member:
+        raise ValueError("No se puede eliminar un programador asignado a un equipo")
+    
     # Primero eliminar los lenguajes asociados
     db.query(models.ProgrammerLanguage).filter(
         models.ProgrammerLanguage.programmer_id == programmer_id

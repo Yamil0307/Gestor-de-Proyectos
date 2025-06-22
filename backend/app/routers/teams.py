@@ -41,16 +41,29 @@ def update_team(team_id: int, team: TeamCreate, db: Session = Depends(get_db), c
 @router.delete("/{team_id}")
 def delete_team(team_id: int, db: Session = Depends(get_db), current_user = Depends(get_current_active_user)):
     """Eliminar equipo"""
-    success = operations.delete_team(db, team_id=team_id)
-    if not success:
-        raise HTTPException(status_code=404, detail="Equipo no encontrado")
-    return {"message": "Equipo eliminado exitosamente"}
+    try:
+        success = operations.delete_team(db, team_id=team_id)
+        if not success:
+            raise HTTPException(status_code=404, detail="Equipo no encontrado")
+        return {"message": "Equipo eliminado exitosamente"}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al eliminar equipo: {str(e)}")
 
 # Endpoints para gestión de miembros
 @router.get("/{team_id}/members")
 def get_team_members(team_id: int, db: Session = Depends(get_db), current_user = Depends(get_current_active_user)):
     """Obtener miembros de un equipo"""
-    return operations.get_team_members(db, team_id=team_id)
+    try:
+        # Verificar que el equipo exista
+        db_team = operations.get_team(db, team_id=team_id)
+        if not db_team:
+            raise HTTPException(status_code=404, detail="Equipo no encontrado")
+        
+        return operations.get_team_members(db, team_id=team_id)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al obtener miembros: {str(e)}")
 
 @router.post("/{team_id}/members")
 def add_team_member(team_id: int, request: dict, db: Session = Depends(get_db), current_user = Depends(get_current_active_user)):
@@ -68,6 +81,11 @@ def add_team_member(team_id: int, request: dict, db: Session = Depends(get_db), 
 def remove_team_member(team_id: int, programmer_id: int, db: Session = Depends(get_db), current_user = Depends(get_current_active_user)):
     """Remover miembro de un equipo"""
     try:
-        return operations.remove_team_member(db, team_id=team_id, programmer_id=programmer_id)
+        result = operations.remove_team_member(db, team_id=team_id, programmer_id=programmer_id)
+        if result:
+            return {"message": "Miembro removido del equipo exitosamente"}
+        return {"message": "No se encontró el miembro en el equipo"}
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=422, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")

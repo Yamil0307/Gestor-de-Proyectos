@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { processApiError } from '../utils/errorUtils';
 
 const API_URL = 'http://localhost:8000';
 
@@ -21,6 +22,26 @@ api.interceptors.request.use(
   }
 );
 
+// Interceptor para manejar errores de respuesta
+api.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      // Si recibimos un 401 (Unauthorized), limpiamos el token
+      localStorage.removeItem('token');
+      
+      // Si no estamos en la página de login, redirigimos
+      if (window.location.pathname !== '/login') {
+        console.log('Sesión expirada. Redirigiendo a login...');
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 // Servicios de autenticación
 export const authService = {
   // Registrar usuario
@@ -29,7 +50,10 @@ export const authService = {
       const response = await api.post('/auth/register', userData);
       return response.data;
     } catch (error) {
-      throw error.response.data;
+      const formattedError = processApiError(error, { 
+        defaultMessage: 'Error al registrar usuario' 
+      });
+      throw formattedError;
     }
   },
 
@@ -44,7 +68,10 @@ export const authService = {
       
       return response.data;
     } catch (error) {
-      throw error.response.data;
+      const formattedError = processApiError(error, { 
+        defaultMessage: 'Error al iniciar sesión' 
+      });
+      throw formattedError;
     }
   },
 
@@ -59,7 +86,10 @@ export const authService = {
       const response = await api.get('/auth/me');
       return response.data;
     } catch (error) {
-      throw error.response.data;
+      const formattedError = processApiError(error, { 
+        defaultMessage: 'Error al obtener información del usuario' 
+      });
+      throw formattedError;
     }
   },
 

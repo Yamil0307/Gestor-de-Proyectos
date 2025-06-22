@@ -4,13 +4,14 @@ import { employeeService } from '../services/employeeService';
 import { programmerService } from '../services/programmerService';
 import { leaderService } from '../services/leaderService';
 import { useNotification } from '../context/NotificationContext.jsx';
+import { useConfirmation } from '../context/ConfirmationContext.jsx';
+import { processApiError } from '../utils/errorUtils';
 import EmployeeLoading from '../components/employees/EmployeeLoading';
 import EmployeesList from '../components/employees/EmployeesList';
 import EmployeesHeader from '../components/employees/EmployeesHeader';
 import EmployeeFormDialog from '../components/employees/EmployeeFormDialog';
 import ProgrammerFields from '../components/employees/ProgrammerFields';
 import LeaderFields from '../components/employees/LeaderFields';
-import './Employees.css';
 
 const Employees = () => {
   const [employees, setEmployees] = useState([]);
@@ -20,6 +21,7 @@ const Employees = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState(null);
   const { showSuccess, showError, showWarning } = useNotification();
+  const { showConfirmation } = useConfirmation();
   const [formData, setFormData] = useState({
     identity_card: '',
     name: '',
@@ -53,22 +55,8 @@ const Employees = () => {
       setLeaders(leadersData);
     } catch (error) {
       console.error('Error al cargar datos:', error);
-      let errorMessage = 'Error al cargar datos';
-      
-      if (error.response?.data?.detail) {
-        // Si es un array, toma el primer mensaje
-        if (Array.isArray(error.response.data.detail)) {
-          errorMessage = error.response.data.detail[0]?.msg || errorMessage;
-        } else {
-          errorMessage = error.response.data.detail;
-        }
-      } else if (typeof error.detail === 'string') {
-        errorMessage = error.detail;
-      } else if (typeof error.message === 'string') {
-        errorMessage = error.message;
-      }
-      
-      showError(errorMessage);
+      const { message } = processApiError(error, { defaultMessage: 'Error al cargar datos de empleados' });
+      showError(message);
     } finally {
       setLoading(false);
     }
@@ -229,34 +217,7 @@ const Employees = () => {
       loadAllData();
     } catch (error) {
       console.error('Error al guardar empleado:', error);
-      let errorMessage = 'Error al guardar empleado';
-      
-      if (error.response?.data?.detail) {
-        // Si es un array, toma el primer mensaje
-        if (Array.isArray(error.response.data.detail)) {
-          const errorDetail = error.response.data.detail[0];
-          // Formatear mensaje para campos específicos
-          if (errorDetail?.loc?.includes('identity_card')) {
-            errorMessage = `Error en Cédula: ${errorDetail.msg}`;
-          } else if (errorDetail?.loc?.includes('name')) {
-            errorMessage = `Error en Nombre: ${errorDetail.msg}`;
-          } else if (errorDetail?.loc?.includes('age')) {
-            errorMessage = `Error en Edad: ${errorDetail.msg}`;
-          } else if (errorDetail?.loc?.includes('base_salary')) {
-            errorMessage = `Error en Salario: ${errorDetail.msg}`;
-          } else if (errorDetail?.msg) {
-            errorMessage = errorDetail.msg;
-          }
-        } else {
-          errorMessage = error.response.data.detail;
-        }
-      } else if (typeof error.detail === 'string') {
-        errorMessage = error.detail;
-      } else if (typeof error.message === 'string') {
-        errorMessage = error.message;
-      }
-      
-      showError(errorMessage);
+      showError(error.message || 'Error al guardar empleado');
     }
   };
 
@@ -282,7 +243,17 @@ const Employees = () => {
   };
 
   const handleDelete = async (employee) => {
-    if (window.confirm('¿Estás seguro de eliminar este empleado?')) {
+    const tipoPuesto = employee.type === 'programmer' ? 'programador' : 'líder';
+    
+    const confirmed = await showConfirmation({
+      title: 'Eliminar Empleado',
+      message: `¿Estás seguro de eliminar al ${tipoPuesto} "${employee.name}"? Esta acción no se puede deshacer.`,
+      confirmButtonText: 'Eliminar',
+      cancelButtonText: 'Cancelar',
+      severity: 'error'
+    });
+    
+    if (confirmed) {
       try {
         if (employee.type === 'programmer') {
           await programmerService.deleteProgrammer(employee.id);
@@ -290,25 +261,17 @@ const Employees = () => {
           await leaderService.deleteLeader(employee.id);
         }
         showSuccess('Empleado eliminado exitosamente');
-        loadAllData();    } catch (error) {
-      console.error('Error al eliminar empleado:', error);
-      let errorMessage = 'Error al eliminar empleado';
-      
-      if (error.response?.data?.detail) {
-        // Si es un array, toma el primer mensaje
-        if (Array.isArray(error.response.data.detail)) {
-          errorMessage = error.response.data.detail[0]?.msg || errorMessage;
-        } else {
-          errorMessage = error.response.data.detail;
+        loadAllData();
+      } catch (error) {
+        console.error('Error al eliminar empleado:', error);
+        const { message } = processApiError(error, { defaultMessage: 'Error al eliminar empleado' });
+        showError(message);
+        
+        // Si el error es por restricción de clave foránea, mostramos un mensaje más amigable
+        if (message.includes('No se puede eliminar un programador asignado')) {
+          showWarning('Para eliminar este empleado, primero debes removerlo de todos los equipos a los que pertenece');
         }
-      } else if (typeof error.detail === 'string') {
-        errorMessage = error.detail;
-      } else if (typeof error.message === 'string') {
-        errorMessage = error.message;
       }
-      
-      showError(errorMessage);
-    }
     }
   };
 

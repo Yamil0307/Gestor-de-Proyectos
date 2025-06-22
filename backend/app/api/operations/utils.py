@@ -15,21 +15,27 @@ def calculate_salary(db: Session, employee_id: int) -> float:
     """
     employee = employee_operations.get_employee(db, employee_id)
     if not employee:
-        raise ValueError("Empleado no encontrado")
+        raise ValueError(f"Empleado con ID {employee_id} no encontrado en la base de datos")
     
     total_salary = employee.base_salary
     
     if employee.type == "programmer":
         programmer = programmer_operations.get_programmer(db, employee_id)
-        if programmer:
-            languages_count = len(programmer.languages)
-            total_salary += languages_count * 200
+        if not programmer:
+            raise ValueError(f"Datos de programador no encontrados para el empleado con ID {employee_id}")
+        # Obtener los lenguajes del programador
+        languages = db.query(models.ProgrammerLanguage).filter(
+            models.ProgrammerLanguage.programmer_id == employee_id
+        ).all()
+        languages_count = len(languages)
+        total_salary += languages_count * 200
     
     elif employee.type == "leader":
         leader = leader_operations.get_leader(db, employee_id)
-        if leader:
-            total_salary += leader.years_experience * 300
-            total_salary += leader.projects_led * 500
+        if not leader:
+            raise ValueError(f"Datos de líder no encontrados para el empleado con ID {employee_id}")
+        total_salary += leader.years_experience * 300
+        total_salary += leader.projects_led * 500
     
     return total_salary
 

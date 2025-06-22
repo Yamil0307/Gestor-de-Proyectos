@@ -37,10 +37,17 @@ def update_programmer(programmer_id: int, programmer_update: schemas.ProgrammerU
 
 @router.delete("/{programmer_id}")
 def delete_programmer(programmer_id: int, db: Session = Depends(get_db)):
-    success = operations.delete_programmer(db, programmer_id=programmer_id)
-    if not success:
-        raise HTTPException(status_code=404, detail="Programmer not found")
-    return {"message": "Programmer deleted successfully"}
+    try:
+        success = operations.delete_programmer(db, programmer_id=programmer_id)
+        if not success:
+            raise HTTPException(status_code=404, detail="Programador no encontrado")
+        return {"message": "Programador eliminado exitosamente"}
+    except ValueError as e:
+        # Para errores de validación como programador asignado a equipos
+        raise HTTPException(status_code=422, detail=str(e))
+    except Exception as e:
+        # Para otros errores inesperados
+        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
 
 @router.get("/by-project/{project_id}", response_model=List[schemas.Programmer])
 def get_programmers_by_project(project_id: int, db: Session = Depends(get_db)):

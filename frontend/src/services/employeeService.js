@@ -1,4 +1,5 @@
 import api from './authService';
+import { processApiError } from '../utils/errorUtils';
 
 export const employeeService = {
   // Obtener todos los empleados
@@ -7,7 +8,10 @@ export const employeeService = {
       const response = await api.get(`/employees/?skip=${skip}&limit=${limit}`);
       return response.data;
     } catch (error) {
-      throw error.response.data;
+      const formattedError = processApiError(error, { 
+        defaultMessage: 'Error al obtener la lista de empleados' 
+      });
+      throw formattedError;
     }
   },
 
@@ -17,7 +21,10 @@ export const employeeService = {
       const response = await api.get(`/employees/${id}`);
       return response.data;
     } catch (error) {
-      throw error.response.data;
+      const formattedError = processApiError(error, { 
+        defaultMessage: `Error al obtener el empleado con ID ${id}` 
+      });
+      throw formattedError;
     }
   },
 
@@ -27,7 +34,10 @@ export const employeeService = {
       const response = await api.post('/employees/', employeeData);
       return response.data;
     } catch (error) {
-      throw error.response.data;
+      const formattedError = processApiError(error, { 
+        defaultMessage: 'Error al crear el empleado' 
+      });
+      throw formattedError;
     }
   },
 
@@ -37,7 +47,10 @@ export const employeeService = {
       const response = await api.put(`/employees/${id}`, employeeData);
       return response.data;
     } catch (error) {
-      throw error.response.data;
+      const formattedError = processApiError(error, { 
+        defaultMessage: `Error al actualizar el empleado con ID ${id}` 
+      });
+      throw formattedError;
     }
   },
 
@@ -47,7 +60,10 @@ export const employeeService = {
       const response = await api.delete(`/employees/${id}`);
       return response.data;
     } catch (error) {
-      throw error.response.data;
+      const formattedError = processApiError(error, { 
+        defaultMessage: `Error al eliminar el empleado con ID ${id}` 
+      });
+      throw formattedError;
     }
   },
 
@@ -57,7 +73,10 @@ export const employeeService = {
       const response = await api.get(`/employees/${id}/salary`);
       return response.data;
     } catch (error) {
-      throw error.response.data;
+      const formattedError = processApiError(error, { 
+        defaultMessage: `Error al calcular el salario del empleado con ID ${id}` 
+      });
+      throw formattedError;
     }
   }
 };

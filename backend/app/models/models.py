@@ -65,6 +65,7 @@ class Team(Base):
     leader_id = Column(Integer, ForeignKey('leaders.employee_id'))
     
     leader = relationship("Leader")
+    project = relationship("Project", back_populates="team", uselist=False)
 
 class TeamMember(Base):
     __tablename__ = "team_members"
@@ -82,6 +83,8 @@ class Project(Base):
     price = Column(Float, nullable=False)  # Cambiado de DECIMAL a Float para SQLite
     type = Column(String(20), nullable=False)
     team_id = Column(Integer, ForeignKey('teams.id'), unique=True)
+    
+    team = relationship("Team", back_populates="project")
     
     __table_args__ = (
         CheckConstraint("type IN ('management', 'multimedia')", name='project_type_check'),

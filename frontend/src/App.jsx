@@ -3,12 +3,12 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import { AuthProvider, useAuth } from './context/AuthContext.jsx';
 import { NotificationProvider } from './context/NotificationContext.jsx';
+import { ConfirmationProvider } from './context/ConfirmationContext.jsx';
 import theme from './theme/theme.js';
 import Login from './components/Login.jsx';
 import Register from './components/Register.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import LoadingSpinner from './components/LoadingSpinner.jsx';
-import './App.css';
 
 // Componente para proteger rutas
 const ProtectedRoute = ({ children }) => {
@@ -39,12 +39,13 @@ function App() {
       <Router>
         <AuthProvider>
           <NotificationProvider>
-            <Routes>
-              {/* Ruta por defecto */}
-              <Route 
-                path="/" 
-                element={<Navigate to="/dashboard" replace />} 
-              />
+            <ConfirmationProvider>
+              <Routes>
+                {/* Ruta por defecto */}
+                <Route 
+                  path="/" 
+                  element={<Navigate to="/dashboard" replace />} 
+                />
                 
                 {/* Rutas públicas (solo sin autenticar) */}
                 <Route 
@@ -80,6 +81,7 @@ function App() {
                   element={<Navigate to="/dashboard" replace />} 
                 />
               </Routes>
+            </ConfirmationProvider>
           </NotificationProvider>
         </AuthProvider>
       </Router>

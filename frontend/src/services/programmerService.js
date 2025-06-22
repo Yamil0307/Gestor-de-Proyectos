@@ -1,4 +1,5 @@
 import api from './authService';
+import { processApiError } from '../utils/errorUtils';
 
 export const programmerService = {
   // Obtener todos los programadores
@@ -7,7 +8,10 @@ export const programmerService = {
       const response = await api.get(`/programmers/?skip=${skip}&limit=${limit}`);
       return response.data;
     } catch (error) {
-      throw error.response.data;
+      const formattedError = processApiError(error, { 
+        defaultMessage: 'Error al obtener la lista de programadores' 
+      });
+      throw formattedError;
     }
   },
 
@@ -17,7 +21,10 @@ export const programmerService = {
       const response = await api.get(`/programmers/${id}`);
       return response.data;
     } catch (error) {
-      throw error.response.data;
+      const formattedError = processApiError(error, { 
+        defaultMessage: `Error al obtener el programador con ID ${id}` 
+      });
+      throw formattedError;
     }
   },
 
@@ -27,7 +34,10 @@ export const programmerService = {
       const response = await api.post('/programmers/', programmerData);
       return response.data;
     } catch (error) {
-      throw error.response.data;
+      const formattedError = processApiError(error, { 
+        defaultMessage: 'Error al crear el programador' 
+      });
+      throw formattedError;
     }
   },
 
@@ -37,7 +47,10 @@ export const programmerService = {
       const response = await api.put(`/programmers/${id}`, programmerData);
       return response.data;
     } catch (error) {
-      throw error.response.data;
+      const formattedError = processApiError(error, { 
+        defaultMessage: `Error al actualizar el programador con ID ${id}` 
+      });
+      throw formattedError;
     }
   },
 
@@ -47,7 +60,10 @@ export const programmerService = {
       const response = await api.delete(`/programmers/${id}`);
       return response.data;
     } catch (error) {
-      throw error.response.data;
+      const formattedError = processApiError(error, { 
+        defaultMessage: `Error al eliminar el programador con ID ${id}` 
+      });
+      throw formattedError;
     }
   }
 };

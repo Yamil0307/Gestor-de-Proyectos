@@ -57,10 +57,15 @@ def delete_team(db: Session, team_id: int):
     if not db_team:
         raise ValueError("Equipo no encontrado")
 
+    # Verificar si hay un proyecto asociado a este equipo
+    db_project = db.query(models.Project).filter(
+        models.Project.team_id == team_id
+    ).first()
+
     # Desasociar proyecto si existe
-    if db_team.project:
-        db_team.project.team_id = None
-        db.add(db_team.project)
+    if db_project:
+        db_project.team_id = None
+        db.add(db_project)
 
     # Eliminar miembros del equipo
     db.query(models.TeamMember).filter(
@@ -104,6 +109,19 @@ def add_team_member(db: Session, team_id: int, programmer_id: int):
 
 def remove_team_member(db: Session, team_id: int, programmer_id: int):
     """Elimina un programador de un equipo"""
+    # Primero verificamos que el equipo exista
+    db_team = get_team(db, team_id)
+    if not db_team:
+        raise ValueError("Equipo no encontrado")
+        
+    # Luego verificamos que el programador exista
+    db_programmer = db.query(models.Programmer).filter(
+        models.Programmer.employee_id == programmer_id
+    ).first()
+    if not db_programmer:
+        raise ValueError("Programador no encontrado")
+    
+    # Finalmente verificamos que el programador esté en el equipo
     db_member = db.query(models.TeamMember).filter(
         models.TeamMember.team_id == team_id,
         models.TeamMember.programmer_id == programmer_id
@@ -111,18 +129,60 @@ def remove_team_member(db: Session, team_id: int, programmer_id: int):
     if not db_member:
         raise ValueError("El programador no está en este equipo")
 
-    db.delete(db_member)
-    db.commit()
-    return True
+    try:
+        db.delete(db_member)
+        db.commit()
+        return True
+    except Exception as e:
+        db.rollback()
+        raise ValueError(f"Error al remover el miembro del equipo: {str(e)}")
 
 def get_team_members(db: Session, team_id: int):
     """Obtiene todos los programadores de un equipo específico"""
-    return db.query(models.Programmer).join(
-        models.TeamMember,
-        models.TeamMember.programmer_id == models.Programmer.employee_id
-    ).filter(
+    # Primero obtener los miembros del equipo
+    team_members = db.query(models.TeamMember).filter(
         models.TeamMember.team_id == team_id
     ).all()
+    
+    # Luego, para cada miembro, obtenemos la información completa del programador
+    # incluyendo su información de empleado
+    result = []
+    for member in team_members:
+        # Obtener el programador
+        programmer = db.query(models.Programmer).filter(
+            models.Programmer.employee_id == member.programmer_id
+        ).first()
+        
+        if programmer:
+            # Obtener el empleado
+            employee = db.query(models.Employee).filter(
+                models.Employee.id == programmer.employee_id
+            ).first()
+            
+            if employee:
+                # Obtener los lenguajes del programador
+                languages = db.query(models.ProgrammerLanguage.language).filter(
+                    models.ProgrammerLanguage.programmer_id == programmer.employee_id
+                ).all()
+                
+                # Añadir a resultados con toda la información
+                result.append({
+                    "team_member_id": member.programmer_id,
+                    "programmer_id": programmer.employee_id,
+                    "employee": {
+                        "id": employee.id,
+                        "name": employee.name,
+                        "identity_card": employee.identity_card,
+                        "age": employee.age,
+                        "sex": employee.sex,
+                        "base_salary": employee.base_salary,
+                        "type": employee.type
+                    },
+                    "category": programmer.category,
+                    "languages": [lang[0] for lang in languages]
+                })
+    
+    return result
 
 def get_team_by_leader(db: Session, leader_id: int):
     """Obtiene el equipo que lidera un líder específico"""
