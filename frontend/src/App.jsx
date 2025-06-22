@@ -1,9 +1,9 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './context/AuthContext';
-import Login from './components/Login';
-import Register from './components/Register';
-import Dashboard from './pages/Dashboard';
+import { AuthProvider, useAuth } from './context/AuthContext.jsx';
+import Login from './components/Login.jsx';
+import Register from './components/Register.jsx';
+import Dashboard from './pages/Dashboard.jsx';
 import './App.css';
 
 // Componente para proteger rutas
@@ -19,7 +19,7 @@ const ProtectedRoute = ({ children }) => {
     );
   }
 
-  return isAuthenticated ? children : <Navigate to="/login" replace />;
+  // return isAuthenticated ? children : <Navigate to="/login" replace />;
 };
 
 // Componente para rutas públicas (solo cuando NO está autenticado)

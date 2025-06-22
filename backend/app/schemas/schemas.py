@@ -1,15 +1,21 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, validator
 from typing import List, Optional
 from datetime import datetime
 
 # ---- ESQUEMAS BASE ----
 class EmployeeBase(BaseModel):
-    identity_card: str
-    name: str
-    age: int
-    sex: str
-    base_salary: float
-    type: str
+    identity_card: str = Field(..., min_length=5, max_length=20, description="Cédula de identidad")
+    name: str = Field(..., min_length=2, max_length=100, description="Nombre completo")
+    age: int = Field(..., ge=18, le=70, description="Edad entre 18 y 70 años")
+    sex: str = Field(..., pattern="^(M|F|Masculino|Femenino)$", description="Sexo: M, F, Masculino o Femenino")
+    base_salary: float = Field(..., gt=0, description="Salario base mayor a 0")
+    type: str = Field(..., pattern="^(programmer|leader)$", description="Tipo: programmer o leader")
+
+    @validator('identity_card')
+    def validate_identity_card(cls, v):
+        if not v.replace('-', '').replace(' ', '').isalnum():
+            raise ValueError('La cédula debe contener solo números, letras, guiones y espacios')
+        return v.strip().upper()
 
 class EmployeeCreate(EmployeeBase):
     pass
@@ -30,11 +36,21 @@ class Employee(EmployeeBase):
 
 # ---- ESQUEMAS PARA PROGRAMADORES ----
 class ProgrammerBase(BaseModel):
-    category: str  # 'A', 'B', o 'C'
+    category: str = Field(..., pattern="^[ABC]$", description="Categoría: A, B o C")
 
 class ProgrammerCreate(ProgrammerBase):
     employee_data: EmployeeCreate
-    languages: List[str]  # Lista de lenguajes que domina
+    languages: List[str] = Field(..., min_items=1, description="Al menos un lenguaje de programación")
+
+    @validator('languages')
+    def validate_languages(cls, v):
+        if not v:
+            raise ValueError('Debe especificar al menos un lenguaje de programación')
+        # Limpiar y validar lenguajes
+        clean_languages = [lang.strip().title() for lang in v if lang.strip()]
+        if not clean_languages:
+            raise ValueError('Debe especificar al menos un lenguaje de programación válido')
+        return clean_languages
 
 class ProgrammerUpdate(BaseModel):
     category: Optional[str] = None
@@ -50,8 +66,8 @@ class Programmer(ProgrammerBase):
 
 # ---- ESQUEMAS PARA LÍDERES ----
 class LeaderBase(BaseModel):
-    years_experience: int
-    projects_led: int
+    years_experience: int = Field(..., ge=1, le=50, description="Años de experiencia entre 1 y 50")
+    projects_led: int = Field(..., ge=0, description="Número de proyectos liderados (0 o más)")
 
 class LeaderCreate(LeaderBase):
     employee_data: EmployeeCreate
@@ -69,15 +85,14 @@ class Leader(LeaderBase):
 
 # ---- ESQUEMAS PARA EQUIPOS ----
 class TeamBase(BaseModel):
-    name: str
-    leader_id: Optional[int] = None
+    name: str = Field(..., min_length=2, max_length=100, description="Nombre del equipo")
+    leader_id: Optional[int] = Field(None, ge=1, description="ID del líder del equipo")
 
 class TeamCreate(TeamBase):
     pass  # No debería tener programmer_ids aquí
 
 class Team(TeamBase):
     id: int
-    created_at: datetime
 
     class Config:
         from_attributes = True
@@ -99,12 +114,12 @@ class TeamMember(TeamMemberBase):
 
 # ---- ESQUEMAS PARA PROYECTOS ----
 class ProjectBase(BaseModel):
-    name: str
-    description: Optional[str] = None
-    estimated_time: int
-    price: float
-    type: str  # 'management' o 'multimedia'
-    team_id: int
+    name: str = Field(..., min_length=2, max_length=100, description="Nombre del proyecto")
+    description: Optional[str] = Field(None, max_length=1000, description="Descripción del proyecto")
+    estimated_time: int = Field(..., gt=0, description="Tiempo estimado en horas (mayor a 0)")
+    price: float = Field(..., gt=0, description="Precio del proyecto (mayor a 0)")
+    type: str = Field(..., pattern="^(management|multimedia)$", description="Tipo: management o multimedia")
+    team_id: int = Field(..., ge=1, description="ID del equipo asignado")
 
 class ProjectCreate(ProjectBase):
     pass
@@ -125,9 +140,9 @@ class Project(ProjectBase):
 
 # ---- ESQUEMAS PARA PROYECTOS DE GESTIÓN ----
 class ManagementProjectBase(BaseModel):
-    database_type: str
-    programming_language: str
-    framework: str
+    database_type: str = Field(..., min_length=2, max_length=50, description="Tipo de base de datos")
+    programming_language: str = Field(..., min_length=2, max_length=50, description="Lenguaje de programación")
+    framework: str = Field(..., min_length=2, max_length=50, description="Framework utilizado")
 
 class ManagementProjectCreate(ManagementProjectBase):
     project_data: ProjectCreate
@@ -140,7 +155,7 @@ class ManagementProject(ManagementProjectBase):
 
 # ---- ESQUEMAS PARA PROYECTOS MULTIMEDIA ----
 class MultimediaProjectBase(BaseModel):
-    development_tool: str  # 'flash' o 'director'
+    development_tool: str = Field(..., pattern="^(flash|director)$", description="Herramienta: flash o director")
 
 class MultimediaProjectCreate(MultimediaProjectBase):
     project_data: ProjectCreate

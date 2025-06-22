@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/AuthContext.jsx';
 import { useNavigate } from 'react-router-dom';
-import Employees from './Employees';
-import Teams from './Teams';
+import Employees from './Employees.jsx';
+import Teams from './Teams.jsx';
 import './Dashboard.css';
 
 const Dashboard = () => {

@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.database.database import engine
 from app.models import models
 from app.api.api import api_router
+from app.config import settings
 
 # Crear las tablas en la base de datos
 models.Base.metadata.create_all(bind=engine)
@@ -13,12 +14,26 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Configurar CORS
+# Configurar CORS de manera más segura
+allowed_origins = [
+    "http://localhost:3000",  # React development server
+    "http://localhost:8080",  # Vue development server
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:8080",
+]
+
+# En producción, usar solo los dominios específicos
+if settings.ENVIRONMENT == "production":
+    allowed_origins = [
+        "https://tu-dominio-frontend.com",
+        # Agrega aquí los dominios de producción
+    ]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH"],
     allow_headers=["*"],
 )
 
