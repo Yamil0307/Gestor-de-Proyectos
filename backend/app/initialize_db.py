@@ -1,8 +1,8 @@
 """
 Script para inicializar la base de datos SQLite
 """
-from database.database import engine
-from models.models import Base
+from app.database.database import engine
+from app.models.models import Base
 
 def init_db():
     """

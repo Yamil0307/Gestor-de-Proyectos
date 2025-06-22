@@ -6,29 +6,16 @@ from app.api.operations import programmer_operations, leader_operations
 # ---- OPERACIONES CRUD PARA EQUIPOS (TEAMS) ----
 def create_team(db: Session, team: schemas.TeamCreate):
     """
-    Crea un nuevo equipo con su líder y programadores asociados.
-    Valida que el líder exista y que los programadores no estén en otro equipo.
+    Crea un nuevo equipo con su líder.
+    Valida que el líder exista si se especifica uno.
     """
-    # Verificar que el líder exista
-    db_leader = db.query(models.Leader).filter(
-        models.Leader.employee_id == team.leader_id
-    ).first()
-    if not db_leader:
-        raise ValueError("El líder especificado no existe")
-
-    # Verificar que los programadores existan y no estén en otro equipo
-    for programmer_id in team.programmer_ids:
-        db_programmer = db.query(models.Programmer).filter(
-            models.Programmer.employee_id == programmer_id
+    # Verificar que el líder exista si se especifica
+    if team.leader_id:
+        db_leader = db.query(models.Leader).filter(
+            models.Leader.employee_id == team.leader_id
         ).first()
-        if not db_programmer:
-            raise ValueError(f"El programador con ID {programmer_id} no existe")
-        
-        existing_member = db.query(models.TeamMember).filter(
-            models.TeamMember.programmer_id == programmer_id
-        ).first()
-        if existing_member:
-            raise ValueError(f"El programador con ID {programmer_id} ya está en otro equipo")
+        if not db_leader:
+            raise ValueError("El líder especificado no existe")
 
     # Crear el equipo
     db_team = models.Team(
@@ -38,16 +25,8 @@ def create_team(db: Session, team: schemas.TeamCreate):
     db.add(db_team)
     db.commit()
     db.refresh(db_team)
-
-    # Agregar miembros al equipo
-    for programmer_id in team.programmer_ids:
-        db_member = models.TeamMember(
-            team_id=db_team.id,
-            programmer_id=programmer_id
-        )
-        db.add(db_member)
     
-    db.commit()
+    return db_team
     return db_team
 
 def get_team(db: Session, team_id: int):

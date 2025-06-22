@@ -7,7 +7,14 @@ export const teamService = {
       const response = await api.get(`/teams/?skip=${skip}&limit=${limit}`);
       return response.data;
     } catch (error) {
-      throw error.response.data;
+      console.error('Error en getTeams:', error);
+      if (error.response) {
+        throw error.response.data;
+      } else {
+        throw {
+          detail: error.message || 'Error de conexión con el servidor'
+        };
+      }
     }
   },
 
@@ -17,7 +24,14 @@ export const teamService = {
       const response = await api.get(`/teams/${id}`);
       return response.data;
     } catch (error) {
-      throw error.response.data;
+      console.error('Error en getTeam:', error);
+      if (error.response) {
+        throw error.response.data;
+      } else {
+        throw {
+          detail: error.message || 'Error de conexión con el servidor'
+        };
+      }
     }
   },
 
@@ -27,7 +41,15 @@ export const teamService = {
       const response = await api.post('/teams/', teamData);
       return response.data;
     } catch (error) {
-      throw error.response.data;
+      console.error('Error en createTeam:', error);
+      if (error.response) {
+        throw error.response.data;
+      } else {
+        // Si no hay respuesta (error de red, CORS, etc.)
+        throw {
+          detail: error.message || 'Error de conexión con el servidor'
+        };
+      }
     }
   },
 
@@ -37,7 +59,14 @@ export const teamService = {
       const response = await api.put(`/teams/${id}`, teamData);
       return response.data;
     } catch (error) {
-      throw error.response.data;
+      console.error('Error en updateTeam:', error);
+      if (error.response) {
+        throw error.response.data;
+      } else {
+        throw {
+          detail: error.message || 'Error de conexión con el servidor'
+        };
+      }
     }
   },
 
@@ -47,7 +76,14 @@ export const teamService = {
       const response = await api.delete(`/teams/${id}`);
       return response.data;
     } catch (error) {
-      throw error.response.data;
+      console.error('Error en deleteTeam:', error);
+      if (error.response) {
+        throw error.response.data;
+      } else {
+        throw {
+          detail: error.message || 'Error de conexión con el servidor'
+        };
+      }
     }
   },
 
@@ -57,7 +93,14 @@ export const teamService = {
       const response = await api.get(`/teams/${teamId}/members`);
       return response.data;
     } catch (error) {
-      throw error.response.data;
+      console.error('Error en getTeamMembers:', error);
+      if (error.response) {
+        throw error.response.data;
+      } else {
+        throw {
+          detail: error.message || 'Error de conexión con el servidor'
+        };
+      }
     }
   },
 
@@ -69,7 +112,14 @@ export const teamService = {
       });
       return response.data;
     } catch (error) {
-      throw error.response.data;
+      console.error('Error en addTeamMember:', error);
+      if (error.response) {
+        throw error.response.data;
+      } else {
+        throw {
+          detail: error.message || 'Error de conexión con el servidor'
+        };
+      }
     }
   },
 
@@ -79,7 +129,14 @@ export const teamService = {
       const response = await api.delete(`/teams/${teamId}/members/${programmerId}`);
       return response.data;
     } catch (error) {
-      throw error.response.data;
+      console.error('Error en removeTeamMember:', error);
+      if (error.response) {
+        throw error.response.data;
+      } else {
+        throw {
+          detail: error.message || 'Error de conexión con el servidor'
+        };
+      }
     }
   }
 };

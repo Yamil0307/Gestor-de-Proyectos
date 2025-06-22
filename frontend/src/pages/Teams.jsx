@@ -1,22 +1,29 @@
 import React, { useState, useEffect } from 'react';
+import { Box } from '@mui/material';
 import { teamService } from '../services/teamService';
 import { leaderService } from '../services/leaderService';
 import { programmerService } from '../services/programmerService';
 import { employeeService } from '../services/employeeService';
+import { useNotification } from '../context/NotificationContext.jsx';
+import TeamLoading from '../components/teams/TeamLoading';
+import TeamsList from '../components/teams/TeamsList';
+import TeamsHeader from '../components/teams/TeamsHeader';
+import TeamFormDialog from '../components/teams/TeamFormDialog';
+import TeamMembersDialog from '../components/teams/TeamMembersDialog';
 import './Teams.css';
 
-const Teams = ({ onBack }) => {
+const Teams = () => {
   const [teams, setTeams] = useState([]);
   const [leaders, setLeaders] = useState([]);
   const [programmers, setProgrammers] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [showMembersModal, setShowMembersModal] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [teamMembers, setTeamMembers] = useState([]);
   const [editingTeam, setEditingTeam] = useState(null);
+  const { showSuccess, showError, showWarning } = useNotification();
   const [formData, setFormData] = useState({
     name: '',
     leader_id: ''
@@ -41,8 +48,23 @@ const Teams = ({ onBack }) => {
       setProgrammers(programmersData);
       setEmployees(employeesData);
     } catch (error) {
-      setError('Error al cargar datos');
-      console.error('Error:', error);
+      console.error('Error al cargar datos:', error);
+      let errorMessage = 'Error al cargar datos';
+      
+      if (error.response?.data?.detail) {
+        // Si es un array, toma el primer mensaje
+        if (Array.isArray(error.response.data.detail)) {
+          errorMessage = error.response.data.detail[0]?.msg || errorMessage;
+        } else {
+          errorMessage = error.response.data.detail;
+        }
+      } else if (typeof error.detail === 'string') {
+        errorMessage = error.detail;
+      } else if (typeof error.message === 'string') {
+        errorMessage = error.message;
+      }
+      
+      showError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -79,7 +101,6 @@ const Teams = ({ onBack }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
 
     try {
       const teamData = {
@@ -89,8 +110,10 @@ const Teams = ({ onBack }) => {
 
       if (editingTeam) {
         await teamService.updateTeam(editingTeam.id, teamData);
+        showSuccess('Equipo actualizado exitosamente');
       } else {
         await teamService.createTeam(teamData);
+        showSuccess('Equipo creado exitosamente');
       }
 
       setShowForm(false);
@@ -98,7 +121,23 @@ const Teams = ({ onBack }) => {
       resetForm();
       loadAllData();
     } catch (error) {
-      setError(error.detail || error.message || 'Error al guardar equipo');
+      console.error('Error al guardar equipo:', error);
+      let errorMessage = 'Error al guardar equipo';
+      
+      if (error.response?.data?.detail) {
+        // Si es un array, toma el primer mensaje
+        if (Array.isArray(error.response.data.detail)) {
+          errorMessage = error.response.data.detail[0]?.msg || errorMessage;
+        } else {
+          errorMessage = error.response.data.detail;
+        }
+      } else if (typeof error.detail === 'string') {
+        errorMessage = error.detail;
+      } else if (typeof error.message === 'string') {
+        errorMessage = error.message;
+      }
+      
+      showError(errorMessage);
     }
   };
 
@@ -115,10 +154,26 @@ const Teams = ({ onBack }) => {
     if (window.confirm('¿Estás seguro de eliminar este equipo?')) {
       try {
         await teamService.deleteTeam(team.id);
-        loadAllData();
-      } catch (error) {
-        setError('Error al eliminar equipo');
+        showSuccess('Equipo eliminado exitosamente');
+        loadAllData();    } catch (error) {
+      console.error('Error al eliminar equipo:', error);
+      let errorMessage = 'Error al eliminar equipo';
+      
+      if (error.response?.data?.detail) {
+        // Si es un array, toma el primer mensaje
+        if (Array.isArray(error.response.data.detail)) {
+          errorMessage = error.response.data.detail[0]?.msg || errorMessage;
+        } else {
+          errorMessage = error.response.data.detail;
+        }
+      } else if (typeof error.detail === 'string') {
+        errorMessage = error.detail;
+      } else if (typeof error.message === 'string') {
+        errorMessage = error.message;
       }
+      
+      showError(errorMessage);
+    }
     }
   };
 
@@ -129,7 +184,23 @@ const Teams = ({ onBack }) => {
       setTeamMembers(members);
       setShowMembersModal(true);
     } catch (error) {
-      setError('Error al cargar miembros del equipo');
+      console.error('Error al cargar miembros del equipo:', error);
+      let errorMessage = 'Error al cargar miembros del equipo';
+      
+      if (error.response?.data?.detail) {
+        // Si es un array, toma el primer mensaje
+        if (Array.isArray(error.response.data.detail)) {
+          errorMessage = error.response.data.detail[0]?.msg || errorMessage;
+        } else {
+          errorMessage = error.response.data.detail;
+        }
+      } else if (typeof error.detail === 'string') {
+        errorMessage = error.detail;
+      } else if (typeof error.message === 'string') {
+        errorMessage = error.message;
+      }
+      
+      showError(errorMessage);
     }
   };
 
@@ -138,8 +209,25 @@ const Teams = ({ onBack }) => {
       await teamService.addTeamMember(selectedTeam.id, programmerId);
       const updatedMembers = await teamService.getTeamMembers(selectedTeam.id);
       setTeamMembers(updatedMembers);
+      showSuccess('Miembro agregado al equipo exitosamente');
     } catch (error) {
-      setError('Error al agregar miembro al equipo');
+      console.error('Error al agregar miembro al equipo:', error);
+      let errorMessage = 'Error al agregar miembro al equipo';
+      
+      if (error.response?.data?.detail) {
+        // Si es un array, toma el primer mensaje
+        if (Array.isArray(error.response.data.detail)) {
+          errorMessage = error.response.data.detail[0]?.msg || errorMessage;
+        } else {
+          errorMessage = error.response.data.detail;
+        }
+      } else if (typeof error.detail === 'string') {
+        errorMessage = error.detail;
+      } else if (typeof error.message === 'string') {
+        errorMessage = error.message;
+      }
+      
+      showError(errorMessage);
     }
   };
 
@@ -148,8 +236,25 @@ const Teams = ({ onBack }) => {
       await teamService.removeTeamMember(selectedTeam.id, programmerId);
       const updatedMembers = await teamService.getTeamMembers(selectedTeam.id);
       setTeamMembers(updatedMembers);
+      showSuccess('Miembro removido del equipo exitosamente');
     } catch (error) {
-      setError('Error al remover miembro del equipo');
+      console.error('Error al remover miembro del equipo:', error);
+      let errorMessage = 'Error al remover miembro del equipo';
+      
+      if (error.response?.data?.detail) {
+        // Si es un array, toma el primer mensaje
+        if (Array.isArray(error.response.data.detail)) {
+          errorMessage = error.response.data.detail[0]?.msg || errorMessage;
+        } else {
+          errorMessage = error.response.data.detail;
+        }
+      } else if (typeof error.detail === 'string') {
+        errorMessage = error.detail;
+      } else if (typeof error.message === 'string') {
+        errorMessage = error.message;
+      }
+      
+      showError(errorMessage);
     }
   };
 
@@ -164,7 +269,6 @@ const Teams = ({ onBack }) => {
     setShowForm(false);
     setEditingTeam(null);
     resetForm();
-    setError('');
   };
 
   // Obtener programadores disponibles (no asignados al equipo actual)
@@ -175,187 +279,43 @@ const Teams = ({ onBack }) => {
   };
 
   if (loading) {
-    return (
-      <div className="loading-container">
-        <div className="loading-spinner"></div>
-        <p>Cargando equipos...</p>
-      </div>
-    );
+    return <TeamLoading />;
   }
 
   return (
-    <div className="teams-container">
-      <div className="teams-header">
-        <button onClick={onBack} className="back-button">← Volver</button>
-        <h2>Gestión de Equipos</h2>
-        <button 
-          onClick={() => setShowForm(true)} 
-          className="add-button"
-        >
-          + Nuevo Equipo
-        </button>
-      </div>
-
-      {error && <div className="error-message">{error}</div>}
-
-      {/* Modal de formulario */}
-      {showForm && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <h3>{editingTeam ? 'Editar Equipo' : 'Nuevo Equipo'}</h3>
-            
-            <form onSubmit={handleSubmit} className="team-form">
-              <div className="form-group">
-                <label>Nombre del Equipo:</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  required
-                  placeholder="Ej: Equipo Frontend, Equipo Backend"
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Líder del Equipo:</label>
-                <select
-                  name="leader_id"
-                  value={formData.leader_id}
-                  onChange={handleInputChange}
-                >
-                  <option value="">Seleccionar líder (opcional)</option>
-                  {leaders.map(leader => {
-                    const employee = getEmployeeById(leader.employee_id);
-                    return (
-                      <option key={leader.employee_id} value={leader.employee_id}>
-                        {employee ? employee.name : `Líder ${leader.employee_id}`}
-                      </option>
-                    );
-                  })}
-                </select>
-              </div>
-
-              <div className="form-actions">
-                <button type="button" onClick={handleCancel} className="cancel-button">
-                  Cancelar
-                </button>
-                <button type="submit" className="save-button">
-                  {editingTeam ? 'Actualizar' : 'Guardar'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Modal de miembros */}
-      {showMembersModal && selectedTeam && (
-        <div className="modal-overlay">
-          <div className="modal-content large-modal">
-            <h3>Miembros del Equipo: {selectedTeam.name}</h3>
-            
-            <div className="members-section">
-              <h4>Miembros Actuales</h4>
-              {teamMembers.length === 0 ? (
-                <p className="no-members">No hay miembros en este equipo</p>
-              ) : (
-                <div className="members-list">
-                  {teamMembers.map(member => {
-                    const employee = getEmployeeById(member.programmer_id);
-                    return (
-                      <div key={member.programmer_id} className="member-item">
-                        <span>{employee ? employee.name : `Programador ${member.programmer_id}`}</span>
-                        <button
-                          onClick={() => handleRemoveMember(member.programmer_id)}
-                          className="remove-member-button"
-                        >
-                          Remover
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            <div className="available-section">
-              <h4>Programadores Disponibles</h4>
-              {getAvailableProgrammers().length === 0 ? (
-                <p className="no-available">No hay programadores disponibles</p>
-              ) : (
-                <div className="available-list">
-                  {getAvailableProgrammers().map(programmer => {
-                    const employee = getEmployeeById(programmer.employee_id);
-                    return (
-                      <div key={programmer.employee_id} className="available-item">
-                        <span>{employee ? employee.name : `Programador ${programmer.employee_id}`}</span>
-                        <button
-                          onClick={() => handleAddMember(programmer.employee_id)}
-                          className="add-member-button"
-                        >
-                          Agregar
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            <div className="modal-actions">
-              <button 
-                onClick={() => setShowMembersModal(false)} 
-                className="close-button"
-              >
-                Cerrar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Lista de equipos */}
-      <div className="teams-list">
-        {teams.length === 0 ? (
-          <div className="empty-state">
-            <p>No hay equipos registrados</p>
-          </div>
-        ) : (
-          <div className="teams-grid">
-            {teams.map(team => (
-              <div key={team.id} className="team-card">
-                <div className="team-info">
-                  <h4>{team.name}</h4>
-                  <p><strong>Líder:</strong> {getTeamLeaderName(team)}</p>
-                  <p><strong>ID:</strong> {team.id}</p>
-                </div>
-                <div className="team-actions">
-                  <button 
-                    onClick={() => handleViewMembers(team)} 
-                    className="members-button"
-                  >
-                    Ver Miembros
-                  </button>
-                  <button 
-                    onClick={() => handleEdit(team)} 
-                    className="edit-button"
-                  >
-                    Editar
-                  </button>
-                  <button 
-                    onClick={() => handleDelete(team)} 
-                    className="delete-button"
-                  >
-                    Eliminar
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
+    <Box p={3}>
+      <TeamsHeader onNewTeam={() => setShowForm(true)} />
+      
+      <TeamFormDialog 
+        open={showForm}
+        onClose={handleCancel}
+        formData={formData}
+        handleInputChange={handleInputChange}
+        handleSubmit={handleSubmit}
+        editingTeam={editingTeam}
+        leaders={leaders}
+        getEmployeeById={getEmployeeById}
+      />
+      
+      <TeamMembersDialog 
+        open={showMembersModal}
+        onClose={() => setShowMembersModal(false)}
+        selectedTeam={selectedTeam}
+        teamMembers={teamMembers}
+        getEmployeeById={getEmployeeById}
+        getAvailableProgrammers={getAvailableProgrammers}
+        onAddMember={handleAddMember}
+        onRemoveMember={handleRemoveMember}
+      />
+      
+      <TeamsList 
+        teams={teams}
+        getTeamLeaderName={getTeamLeaderName}
+        onViewMembers={handleViewMembers}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+      />
+    </Box>
   );
 };
 

@@ -16,10 +16,15 @@ app = FastAPI(
 
 # Configurar CORS de manera más segura
 allowed_origins = [
-    "http://localhost:3000",  # React development server
+    "http://localhost:3000",  # React development server (Create React App)
+    "http://localhost:5173",  # Vite development server
+    "http://localhost:5174",  # Vite development server alternativo
     "http://localhost:8080",  # Vue development server
     "http://127.0.0.1:3000",
+    "http://127.0.0.1:5173",  # Vite development server (127.0.0.1)
+    "http://127.0.0.1:5174",  # Vite development server alternativo (127.0.0.1)
     "http://127.0.0.1:8080",
+    "*",  # Permitir cualquier origen durante desarrollo - REMOVER EN PRODUCCIÓN
 ]
 
 # En producción, usar solo los dominios específicos

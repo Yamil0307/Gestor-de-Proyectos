@@ -1,98 +1,53 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Box, useTheme } from '@mui/material';
 import { useAuth } from '../context/AuthContext.jsx';
-import { useNavigate } from 'react-router-dom';
+import { employeeService } from '../services/employeeService.js';
+import { teamService } from '../services/teamService.js';
 import Employees from './Employees.jsx';
 import Teams from './Teams.jsx';
-import './Dashboard.css';
+import DashboardHeader from '../components/dashboard/DashboardHeader.jsx';
+import DashboardTabs from '../components/dashboard/DashboardTabs.jsx';
+import DashboardStats from '../components/dashboard/DashboardStats.jsx';
 
 const Dashboard = () => {
+  const theme = useTheme();
   const { user, logout } = useAuth();
-  const navigate = useNavigate();
-  const [currentView, setCurrentView] = useState('dashboard');
+  const [tab, setTab] = useState(0);
+  const [stats, setStats] = useState({ employees: 0, teams: 0 });
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
   };
 
-  const handleViewChange = (view) => {
-    setCurrentView(view);
+  const handleTabChange = (event, newValue) => {
+    setTab(newValue);
   };
 
-  const handleBackToDashboard = () => {
-    setCurrentView('dashboard');
-  };
+  // Fetch general statistics
+  useEffect(() => {
+    (async () => {
+      try {
+        const emps = await employeeService.getEmployees();
+        const tms = await teamService.getTeams();
+        setStats({ employees: emps.length, teams: tms.length });
+      } catch (e) {
+        console.error('Error loading stats:', e);
+      }
+    })();
+  }, []);
 
-  // Renderizar vista según la selección actual
-  if (currentView === 'employees') {
-    return <Employees onBack={handleBackToDashboard} />;
-  }
 
-  if (currentView === 'teams') {
-    return <Teams onBack={handleBackToDashboard} />;
-  }
-
-  // Vista principal del dashboard
+  // Main render
   return (
-    <div className="dashboard-container">
-      <header className="dashboard-header">
-        <h1>Sistema de Gestión de Proyectos</h1>
-        <div className="user-info">
-          <span>Bienvenido, {user?.username}</span>
-          <button onClick={handleLogout} className="logout-button">
-            Cerrar Sesión
-          </button>
-        </div>
-      </header>
-
-      <main className="dashboard-main">
-        <div className="dashboard-grid">
-          <div className="dashboard-card">
-            <h3>Empleados</h3>
-            <p>Gestionar empleados del sistema</p>
-            <button 
-              className="card-button"
-              onClick={() => handleViewChange('employees')}
-            >
-              Ver Empleados
-            </button>
-          </div>
-
-          <div className="dashboard-card">
-            <h3>Equipos</h3>
-            <p>Administrar equipos de trabajo</p>
-            <button 
-              className="card-button"
-              onClick={() => handleViewChange('teams')}
-            >
-              Ver Equipos
-            </button>
-          </div>
-
-          <div className="dashboard-card">
-            <h3>Proyectos</h3>
-            <p>Controlar proyectos activos</p>
-            <button 
-              className="card-button"
-              onClick={() => handleViewChange('projects')}
-            >
-              Ver Proyectos
-            </button>
-          </div>
-
-          <div className="dashboard-card">
-            <h3>Reportes</h3>
-            <p>Análisis y estadísticas</p>
-            <button 
-              className="card-button"
-              onClick={() => handleViewChange('analytics')}
-            >
-              Ver Reportes
-            </button>
-          </div>
-        </div>
-      </main>
-    </div>
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'background.default' }}>
+      <DashboardHeader username={user?.username} onLogout={handleLogout} />
+      <DashboardTabs tab={tab} onTabChange={handleTabChange} />
+      <Box sx={{ flexGrow: 1, p: 3 }}>
+        {tab === 0 && <DashboardStats stats={stats} />}
+        {tab === 1 && <Employees />}
+        {tab === 2 && <Teams />}
+      </Box>
+    </Box>
   );
 };
 

@@ -1,17 +1,25 @@
 import React, { useState, useEffect } from 'react';
+import { Box } from '@mui/material';
 import { employeeService } from '../services/employeeService';
 import { programmerService } from '../services/programmerService';
 import { leaderService } from '../services/leaderService';
+import { useNotification } from '../context/NotificationContext.jsx';
+import EmployeeLoading from '../components/employees/EmployeeLoading';
+import EmployeesList from '../components/employees/EmployeesList';
+import EmployeesHeader from '../components/employees/EmployeesHeader';
+import EmployeeFormDialog from '../components/employees/EmployeeFormDialog';
+import ProgrammerFields from '../components/employees/ProgrammerFields';
+import LeaderFields from '../components/employees/LeaderFields';
 import './Employees.css';
 
-const Employees = ({ onBack }) => {
+const Employees = () => {
   const [employees, setEmployees] = useState([]);
   const [programmers, setProgrammers] = useState([]);
   const [leaders, setLeaders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState(null);
+  const { showSuccess, showError, showWarning } = useNotification();
   const [formData, setFormData] = useState({
     identity_card: '',
     name: '',
@@ -44,8 +52,23 @@ const Employees = ({ onBack }) => {
       setProgrammers(programmersData);
       setLeaders(leadersData);
     } catch (error) {
-      setError('Error al cargar datos');
-      console.error('Error:', error);
+      console.error('Error al cargar datos:', error);
+      let errorMessage = 'Error al cargar datos';
+      
+      if (error.response?.data?.detail) {
+        // Si es un array, toma el primer mensaje
+        if (Array.isArray(error.response.data.detail)) {
+          errorMessage = error.response.data.detail[0]?.msg || errorMessage;
+        } else {
+          errorMessage = error.response.data.detail;
+        }
+      } else if (typeof error.detail === 'string') {
+        errorMessage = error.detail;
+      } else if (typeof error.message === 'string') {
+        errorMessage = error.message;
+      }
+      
+      showError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -104,7 +127,44 @@ const Employees = ({ onBack }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+
+    // Validación básica del formulario
+    if (formData.identity_card.length < 5) {
+      showError("La cédula debe tener al menos 5 caracteres");
+      return;
+    }
+
+    if (formData.name.length < 3) {
+      showError("El nombre debe tener al menos 3 caracteres");
+      return;
+    }
+
+    if (!formData.age || parseInt(formData.age) < 18) {
+      showError("La edad debe ser de al menos 18 años");
+      return;
+    }
+
+    if (!formData.base_salary || parseFloat(formData.base_salary) <= 0) {
+      showError("El salario base debe ser mayor que cero");
+      return;
+    }
+
+    // Validaciones específicas según el tipo
+    if (formData.type === 'leader') {
+      if (!formData.years_experience) {
+        showError("Los años de experiencia son obligatorios para líderes");
+        return;
+      }
+      if (!formData.projects_led) {
+        showError("Los proyectos liderados son obligatorios para líderes");
+        return;
+      }
+    } else if (formData.type === 'programmer') {
+      if (!formData.languages || formData.languages.length === 0 || !formData.languages[0]) {
+        showError("Debe ingresar al menos un lenguaje de programación");
+        return;
+      }
+    }
 
     try {
       if (formData.type === 'programmer') {
@@ -129,8 +189,10 @@ const Employees = ({ onBack }) => {
             category: formData.category,
             languages: formData.languages.filter(lang => lang.trim() !== '')
           });
+          showSuccess('Programador actualizado exitosamente');
         } else {
           await programmerService.createProgrammer(programmerData);
+          showSuccess('Programador creado exitosamente');
         }
       } else {
         const leaderData = {
@@ -154,8 +216,10 @@ const Employees = ({ onBack }) => {
             years_experience: parseInt(formData.years_experience),
             projects_led: parseInt(formData.projects_led)
           });
+          showSuccess('Líder actualizado exitosamente');
         } else {
           await leaderService.createLeader(leaderData);
+          showSuccess('Líder creado exitosamente');
         }
       }
 
@@ -164,7 +228,35 @@ const Employees = ({ onBack }) => {
       resetForm();
       loadAllData();
     } catch (error) {
-      setError(error.detail || error.message || 'Error al guardar empleado');
+      console.error('Error al guardar empleado:', error);
+      let errorMessage = 'Error al guardar empleado';
+      
+      if (error.response?.data?.detail) {
+        // Si es un array, toma el primer mensaje
+        if (Array.isArray(error.response.data.detail)) {
+          const errorDetail = error.response.data.detail[0];
+          // Formatear mensaje para campos específicos
+          if (errorDetail?.loc?.includes('identity_card')) {
+            errorMessage = `Error en Cédula: ${errorDetail.msg}`;
+          } else if (errorDetail?.loc?.includes('name')) {
+            errorMessage = `Error en Nombre: ${errorDetail.msg}`;
+          } else if (errorDetail?.loc?.includes('age')) {
+            errorMessage = `Error en Edad: ${errorDetail.msg}`;
+          } else if (errorDetail?.loc?.includes('base_salary')) {
+            errorMessage = `Error en Salario: ${errorDetail.msg}`;
+          } else if (errorDetail?.msg) {
+            errorMessage = errorDetail.msg;
+          }
+        } else {
+          errorMessage = error.response.data.detail;
+        }
+      } else if (typeof error.detail === 'string') {
+        errorMessage = error.detail;
+      } else if (typeof error.message === 'string') {
+        errorMessage = error.message;
+      }
+      
+      showError(errorMessage);
     }
   };
 
@@ -197,10 +289,26 @@ const Employees = ({ onBack }) => {
         } else {
           await leaderService.deleteLeader(employee.id);
         }
-        loadAllData();
-      } catch (error) {
-        setError('Error al eliminar empleado');
+        showSuccess('Empleado eliminado exitosamente');
+        loadAllData();    } catch (error) {
+      console.error('Error al eliminar empleado:', error);
+      let errorMessage = 'Error al eliminar empleado';
+      
+      if (error.response?.data?.detail) {
+        // Si es un array, toma el primer mensaje
+        if (Array.isArray(error.response.data.detail)) {
+          errorMessage = error.response.data.detail[0]?.msg || errorMessage;
+        } else {
+          errorMessage = error.response.data.detail;
+        }
+      } else if (typeof error.detail === 'string') {
+        errorMessage = error.detail;
+      } else if (typeof error.message === 'string') {
+        errorMessage = error.message;
       }
+      
+      showError(errorMessage);
+    }
     }
   };
 
@@ -223,269 +331,55 @@ const Employees = ({ onBack }) => {
     setShowForm(false);
     setEditingEmployee(null);
     resetForm();
-    setError('');
   };
 
   // Renderizar campos específicos según el tipo
   const renderSpecificFields = () => {
     if (formData.type === 'programmer') {
       return (
-        <>
-          <div className="form-group">
-            <label>Categoría:</label>
-            <select
-              name="category"
-              value={formData.category}
-              onChange={handleInputChange}
-              required
-            >
-              <option value="A">Categoría A</option>
-              <option value="B">Categoría B</option>
-              <option value="C">Categoría C</option>
-            </select>
-          </div>
-
-          <div className="form-group">
-            <label>Lenguajes de Programación:</label>
-            {formData.languages.map((language, index) => (
-              <div key={index} className="language-input">
-                <input
-                  type="text"
-                  value={language}
-                  onChange={(e) => handleLanguageChange(index, e.target.value)}
-                  placeholder="Ej: Python, JavaScript, Java"
-                />
-                {formData.languages.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => removeLanguage(index)}
-                    className="remove-language"
-                  >
-                    ×
-                  </button>
-                )}
-              </div>
-            ))}
-            <button
-              type="button"
-              onClick={addLanguage}
-              className="add-language"
-            >
-              + Agregar Lenguaje
-            </button>
-          </div>
-        </>
+        <ProgrammerFields 
+          formData={formData} 
+          handleInputChange={handleInputChange}
+          handleLanguageChange={handleLanguageChange}
+          addLanguage={addLanguage}
+          removeLanguage={removeLanguage}
+        />
       );
     } else {
       return (
-        <>
-          <div className="form-group">
-            <label>Años de Experiencia:</label>
-            <input
-              type="number"
-              name="years_experience"
-              value={formData.years_experience}
-              onChange={handleInputChange}
-              min="0"
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Proyectos Liderados:</label>
-            <input
-              type="number"
-              name="projects_led"
-              value={formData.projects_led}
-              onChange={handleInputChange}
-              min="0"
-              required
-            />
-          </div>
-        </>
+        <LeaderFields 
+          formData={formData} 
+          handleInputChange={handleInputChange}
+        />
       );
     }
   };
 
   if (loading) {
-    return (
-      <div className="loading-container">
-        <div className="loading-spinner"></div>
-        <p>Cargando empleados...</p>
-      </div>
-    );
+    return <EmployeeLoading />;
   }
 
   return (
-    <div className="employees-container">
-      <div className="employees-header">
-        <button onClick={onBack} className="back-button">← Volver</button>
-        <h2>Gestión de Empleados</h2>
-        <button 
-          onClick={() => setShowForm(true)} 
-          className="add-button"
-        >
-          + Nuevo Empleado
-        </button>
-      </div>
-
-      {error && <div className="error-message">{error}</div>}
-
-      {showForm && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <h3>{editingEmployee ? 'Editar Empleado' : 'Nuevo Empleado'}</h3>
-            
-            <form onSubmit={handleSubmit} className="employee-form">
-              {/* Campos básicos */}
-              <div className="form-group">
-                <label>Cédula:</label>
-                <input
-                  type="text"
-                  name="identity_card"
-                  value={formData.identity_card}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Nombre:</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Edad:</label>
-                  <input
-                    type="number"
-                    name="age"
-                    value={formData.age}
-                    onChange={handleInputChange}
-                    min="18"
-                    max="70"
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Sexo:</label>
-                  <select
-                    name="sex"
-                    value={formData.sex}
-                    onChange={handleInputChange}
-                    required
-                  >
-                    <option value="M">Masculino</option>
-                    <option value="F">Femenino</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Salario Base:</label>
-                  <input
-                    type="number"
-                    name="base_salary"
-                    value={formData.base_salary}
-                    onChange={handleInputChange}
-                    step="0.01"
-                    min="0"
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Tipo:</label>
-                  <select
-                    name="type"
-                    value={formData.type}
-                    onChange={handleInputChange}
-                    required
-                    disabled={editingEmployee} // No permitir cambiar tipo al editar
-                  >
-                    <option value="programmer">Programador</option>
-                    <option value="leader">Líder</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Campos específicos según el tipo */}
-              {renderSpecificFields()}
-
-              <div className="form-actions">
-                <button type="button" onClick={handleCancel} className="cancel-button">
-                  Cancelar
-                </button>
-                <button type="submit" className="save-button">
-                  {editingEmployee ? 'Actualizar' : 'Guardar'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      <div className="employees-list">
-        {employees.length === 0 ? (
-          <div className="empty-state">
-            <p>No hay empleados registrados</p>
-          </div>
-        ) : (
-          <div className="employees-grid">
-            {employees.map(employee => {
-              const employeeDetails = getEmployeeDetails(employee);
-              return (
-                <div key={employee.id} className="employee-card">
-                  <div className="employee-info">
-                    <h4>{employee.name}</h4>
-                    <p><strong>Cédula:</strong> {employee.identity_card}</p>
-                    <p><strong>Edad:</strong> {employee.age} años</p>
-                    <p><strong>Sexo:</strong> {employee.sex === 'M' ? 'Masculino' : 'Femenino'}</p>
-                    <p><strong>Salario:</strong> ${employee.base_salary}</p>
-                    <p><strong>Tipo:</strong> {employee.type === 'programmer' ? 'Programador' : 'Líder'}</p>
-                    
-                    {/* Mostrar campos específicos */}
-                    {employee.type === 'programmer' ? (
-                      <>
-                        <p><strong>Categoría:</strong> {employeeDetails.category}</p>
-                        <p><strong>Lenguajes:</strong> {employeeDetails.languages.join(', ') || 'Ninguno'}</p>
-                      </>
-                    ) : (
-                      <>
-                        <p><strong>Experiencia:</strong> {employeeDetails.years_experience} años</p>
-                        <p><strong>Proyectos:</strong> {employeeDetails.projects_led}</p>
-                      </>
-                    )}
-                  </div>
-                  <div className="employee-actions">
-                    <button 
-                      onClick={() => handleEdit(employee)} 
-                      className="edit-button"
-                    >
-                      Editar
-                    </button>
-                    <button 
-                      onClick={() => handleDelete(employee)} 
-                      className="delete-button"
-                    >
-                      Eliminar
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-    </div>
+    <Box p={3}>
+      <EmployeesHeader onNewEmployee={() => setShowForm(true)} />
+      
+      <EmployeeFormDialog 
+        open={showForm}
+        onClose={handleCancel}
+        formData={formData}
+        handleInputChange={handleInputChange}
+        handleSubmit={handleSubmit}
+        editingEmployee={editingEmployee}
+        renderSpecificFields={renderSpecificFields}
+      />
+      
+      <EmployeesList 
+        employees={employees}
+        getEmployeeDetails={getEmployeeDetails}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+      />
+    </Box>
   );
 };
 
