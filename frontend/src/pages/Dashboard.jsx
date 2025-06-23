@@ -5,6 +5,7 @@ import { employeeService } from '../services/employeeService.js';
 import { teamService } from '../services/teamService.js';
 import Employees from './Employees.jsx';
 import Teams from './Teams.jsx';
+import Projects from './Projects.jsx';
 import DashboardHeader from '../components/dashboard/DashboardHeader.jsx';
 import DashboardTabs from '../components/dashboard/DashboardTabs.jsx';
 import DashboardStats from '../components/dashboard/DashboardStats.jsx';
@@ -46,6 +47,7 @@ const Dashboard = () => {
         {tab === 0 && <DashboardStats stats={stats} />}
         {tab === 1 && <Employees />}
         {tab === 2 && <Teams />}
+        {tab === 3 && <Projects />}
       </Box>
     </Box>
   );

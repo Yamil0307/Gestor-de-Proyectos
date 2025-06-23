@@ -14,6 +14,7 @@ const DashboardTabs = ({ tab, onTabChange }) => {
       <Tab label="Dashboard" />
       <Tab label="Empleados" />
       <Tab label="Equipos" />
+      <Tab label="Proyectos" />
     </Tabs>
   );
 };
