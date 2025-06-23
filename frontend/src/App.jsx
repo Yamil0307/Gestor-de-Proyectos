@@ -8,6 +8,7 @@ import theme from './theme/theme.js';
 import Login from './components/Login.jsx';
 import Register from './components/Register.jsx';
 import Dashboard from './pages/Dashboard.jsx';
+import Projects from './pages/Projects';
 import LoadingSpinner from './components/LoadingSpinner.jsx';
 
 // Componente para proteger rutas
@@ -71,6 +72,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <Dashboard />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/projects" 
+                  element={
+                    <ProtectedRoute>
+                      <Projects />
                     </ProtectedRoute>
                   } 
                 />

@@ -43,6 +43,39 @@ def get_management_project(project_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Management project not found")
     return db_management_project
 
+@management_projects_router.get("/", response_model=List[schemas.ManagementProject])
+def get_all_management_projects(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    """Obtiene todos los proyectos de gestión"""
+    return operations.get_all_management_projects(db=db, skip=skip, limit=limit)
+
+@management_projects_router.put("/{project_id}", response_model=schemas.ManagementProject)
+def update_management_project(project_id: int, management_update: schemas.ManagementProjectBase, db: Session = Depends(get_db)):
+    """Actualiza un proyecto de gestión existente"""
+    try:
+        db_management = operations.update_management_project(db=db, project_id=project_id, management_update=management_update)
+        if db_management is None:
+            raise HTTPException(status_code=404, detail="Management project not found")
+        return db_management
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@management_projects_router.delete("/{project_id}")
+def delete_management_project(project_id: int, db: Session = Depends(get_db)):
+    """Elimina un proyecto de gestión"""
+    # Verificamos primero que el proyecto exista y sea de tipo gestión
+    db_project = operations.get_project(db, project_id=project_id)
+    if not db_project:
+        raise HTTPException(status_code=404, detail="Project not found")
+        
+    if db_project.type != "management":
+        raise HTTPException(status_code=400, detail="Project is not a management project")
+        
+    # Usamos la función existente para eliminar el proyecto y sus detalles
+    success = operations.delete_project(db, project_id=project_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return {"message": "Management project deleted successfully"}
+
 # ================= MULTIMEDIA PROJECTS ROUTES =================
 multimedia_projects_router = APIRouter(prefix="/multimedia-projects", tags=["multimedia-projects"])
 
@@ -59,6 +92,39 @@ def get_multimedia_project(project_id: int, db: Session = Depends(get_db)):
     if db_multimedia_project is None:
         raise HTTPException(status_code=404, detail="Multimedia project not found")
     return db_multimedia_project
+
+@multimedia_projects_router.get("/", response_model=List[schemas.MultimediaProject])
+def get_all_multimedia_projects(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    """Obtiene todos los proyectos multimedia"""
+    return operations.get_all_multimedia_projects(db=db, skip=skip, limit=limit)
+
+@multimedia_projects_router.put("/{project_id}", response_model=schemas.MultimediaProject)
+def update_multimedia_project(project_id: int, multimedia_update: schemas.MultimediaProjectBase, db: Session = Depends(get_db)):
+    """Actualiza un proyecto multimedia existente"""
+    try:
+        db_multimedia = operations.update_multimedia_project(db=db, project_id=project_id, multimedia_update=multimedia_update)
+        if db_multimedia is None:
+            raise HTTPException(status_code=404, detail="Multimedia project not found")
+        return db_multimedia
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@multimedia_projects_router.delete("/{project_id}")
+def delete_multimedia_project(project_id: int, db: Session = Depends(get_db)):
+    """Elimina un proyecto multimedia"""
+    # Verificamos primero que el proyecto exista y sea de tipo multimedia
+    db_project = operations.get_project(db, project_id=project_id)
+    if not db_project:
+        raise HTTPException(status_code=404, detail="Project not found")
+        
+    if db_project.type != "multimedia":
+        raise HTTPException(status_code=400, detail="Project is not a multimedia project")
+        
+    # Usamos la función existente para eliminar el proyecto y sus detalles
+    success = operations.delete_project(db, project_id=project_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return {"message": "Multimedia project deleted successfully"}
 
 # Incluir todos los sub-routers
 router.include_router(analytics_router)

@@ -13,7 +13,7 @@ import TeamsHeader from '../components/teams/TeamsHeader';
 import TeamFormDialog from '../components/teams/TeamFormDialog';
 import TeamMembersDialog from '../components/teams/TeamMembersDialog';
 
-const Teams = () => {
+const Teams = ({ onDataChange }) => {
   const [teams, setTeams] = useState([]);
   const [leaders, setLeaders] = useState([]);
   const [programmers, setProgrammers] = useState([]);
@@ -99,9 +99,19 @@ const Teams = () => {
       if (editingTeam) {
         await teamService.updateTeam(editingTeam.id, teamData);
         showSuccess('Equipo actualizado exitosamente');
+        
+        // Notificar al Dashboard sobre el cambio
+        if (onDataChange && typeof onDataChange === 'function') {
+          onDataChange();
+        }
       } else {
         await teamService.createTeam(teamData);
         showSuccess('Equipo creado exitosamente');
+        
+        // Notificar al Dashboard sobre el cambio
+        if (onDataChange && typeof onDataChange === 'function') {
+          onDataChange();
+        }
       }
 
       setShowForm(false);
@@ -137,6 +147,12 @@ const Teams = () => {
       try {
         await teamService.deleteTeam(team.id);
         showSuccess('Equipo eliminado exitosamente');
+        
+        // Notificar al Dashboard sobre el cambio
+        if (onDataChange && typeof onDataChange === 'function') {
+          onDataChange();
+        }
+        
         loadAllData();
       } catch (error) {
         console.error('Error al eliminar equipo:', error);
@@ -275,6 +291,10 @@ const Teams = () => {
       />
     </Box>
   );
+};
+
+Teams.defaultProps = {
+  onDataChange: () => {}
 };
 
 export default Teams;

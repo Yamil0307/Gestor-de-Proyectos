@@ -113,6 +113,41 @@ def get_management_project(db: Session, project_id: int):
     """Obtiene un proyecto de gestión por su ID de proyecto"""
     return db.query(models.ManagementProject).filter(models.ManagementProject.project_id == project_id).first()
 
+def get_all_management_projects(db: Session, skip: int = 0, limit: int = 100):
+    """Obtiene todos los proyectos de gestión con paginación"""
+    # Join con la tabla de proyectos para obtener solo los de tipo "management"
+    management_projects = db.query(models.ManagementProject).join(
+        models.Project,
+        models.ManagementProject.project_id == models.Project.id
+    ).filter(
+        models.Project.type == "management"
+    ).offset(skip).limit(limit).all()
+    
+    return management_projects
+
+def update_management_project(db: Session, project_id: int, management_update: schemas.ManagementProjectBase):
+    """Actualiza los detalles específicos de un proyecto de gestión"""
+    # Verificar que existe el proyecto y es de tipo gestión
+    db_project = get_project(db, project_id)
+    if not db_project:
+        return None
+    if db_project.type != "management":
+        raise ValueError("El proyecto no es de tipo gestión")
+    
+    # Obtener los detalles del proyecto de gestión
+    db_management = get_management_project(db, project_id)
+    if not db_management:
+        return None
+    
+    # Actualizar campos
+    db_management.database_type = management_update.database_type
+    db_management.programming_language = management_update.programming_language
+    db_management.framework = management_update.framework
+    
+    db.commit()
+    db.refresh(db_management)
+    return db_management
+
 # ---- OPERACIONES CRUD PARA PROYECTOS MULTIMEDIA ----
 def create_multimedia_project(db: Session, multimedia_project: schemas.MultimediaProjectCreate):
     """Crea un nuevo proyecto multimedia con sus datos de proyecto"""
@@ -147,3 +182,36 @@ def create_multimedia_project(db: Session, multimedia_project: schemas.Multimedi
 def get_multimedia_project(db: Session, project_id: int):
     """Obtiene un proyecto multimedia por su ID de proyecto"""
     return db.query(models.MultimediaProject).filter(models.MultimediaProject.project_id == project_id).first()
+
+def get_all_multimedia_projects(db: Session, skip: int = 0, limit: int = 100):
+    """Obtiene todos los proyectos multimedia con paginación"""
+    # Join con la tabla de proyectos para obtener solo los de tipo "multimedia"
+    multimedia_projects = db.query(models.MultimediaProject).join(
+        models.Project,
+        models.MultimediaProject.project_id == models.Project.id
+    ).filter(
+        models.Project.type == "multimedia"
+    ).offset(skip).limit(limit).all()
+    
+    return multimedia_projects
+
+def update_multimedia_project(db: Session, project_id: int, multimedia_update: schemas.MultimediaProjectBase):
+    """Actualiza los detalles específicos de un proyecto multimedia"""
+    # Verificar que existe el proyecto y es de tipo multimedia
+    db_project = get_project(db, project_id)
+    if not db_project:
+        return None
+    if db_project.type != "multimedia":
+        raise ValueError("El proyecto no es de tipo multimedia")
+    
+    # Obtener los detalles del proyecto multimedia
+    db_multimedia = get_multimedia_project(db, project_id)
+    if not db_multimedia:
+        return None
+    
+    # Actualizar campos
+    db_multimedia.development_tool = multimedia_update.development_tool
+    
+    db.commit()
+    db.refresh(db_multimedia)
+    return db_multimedia

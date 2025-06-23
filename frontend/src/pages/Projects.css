@@ -120,6 +120,22 @@
   font-size: 18px;
 }
 
+.project-specific-fields {
+  background-color: #f8f9fa;
+  padding: 15px;
+  border-radius: 5px;
+  border-left: 4px solid #3f51b5;
+  margin-top: 15px;
+}
+
+.project-specific-fields h4 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #3f51b5;
+  font-size: 16px;
+  font-weight: 500;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .projects-header {
@@ -130,5 +146,10 @@
 
   .projects-grid {
     grid-template-columns: 1fr;
+  }
+
+  .project-header {
+    flex-direction: column;
+    gap: 10px;
   }
 }
