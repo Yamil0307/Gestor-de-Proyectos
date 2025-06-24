@@ -91,5 +91,18 @@ export const programmerService = {
       });
       throw formattedError;
     }
+  },
+
+  // Obtener programadores que trabajan en proyectos de gestión con un framework dado
+  async getProgrammersByFramework(framework) {
+    try {
+      const response = await api.get(`/programmers/by-framework/${framework}`);
+      return response.data;
+    } catch (error) {
+      const formattedError = processApiError(error, { 
+        defaultMessage: `No se encontraron programadores para el framework "${framework}"`
+      });
+      throw formattedError;
+    }
   }
 };

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box } from '@mui/material';
+import { Box, Typography } from '@mui/material'; // Asegúrate de importar Typography
 import { employeeService } from '../services/employeeService';
 import { programmerService } from '../services/programmerService';
 import { leaderService } from '../services/leaderService';
@@ -12,6 +12,8 @@ import EmployeesHeader from '../components/employees/EmployeesHeader';
 import EmployeeFormDialog from '../components/employees/EmployeeFormDialog';
 import ProgrammerFields from '../components/employees/ProgrammerFields';
 import LeaderFields from '../components/employees/LeaderFields';
+import EmployeesFrameworkFilter from '../components/employees/EmployeesFrameworkFilter';
+import '../pages/Employees.css';
 
 const Employees = () => {
   const [employees, setEmployees] = useState([]);
@@ -36,6 +38,11 @@ const Employees = () => {
     years_experience: '',
     projects_led: ''
   });
+  const [frameworkFilter, setFrameworkFilter] = useState('');
+  const [frameworkResults, setFrameworkResults] = useState([]);
+  const [frameworkLoading, setFrameworkLoading] = useState(false);
+  // Nuevo estado para rastrear si se ha realizado una búsqueda
+  const [hasFrameworkSearch, setHasFrameworkSearch] = useState(false);
 
   useEffect(() => {
     loadAllData();
@@ -318,6 +325,41 @@ const Employees = () => {
     }
   };
 
+  const handleFrameworkChange = (value) => {
+    setFrameworkFilter(value);
+  };
+
+  const handleFrameworkSearch = async (framework) => {
+    if (!framework) return;
+    
+    setFrameworkLoading(true);
+    setHasFrameworkSearch(true); // Indicar que se realizó una búsqueda
+    
+    try {
+      const programmers = await programmerService.getProgrammersByFramework(framework);
+      setFrameworkResults(programmers);
+    } catch (error) {
+      setFrameworkResults([]);
+    } finally {
+      setFrameworkLoading(false);
+    }
+  };
+
+  const handleFrameworkClear = () => {
+    setFrameworkFilter('');
+    setFrameworkResults([]);
+    setHasFrameworkSearch(false); // Reiniciar el indicador de búsqueda
+  };
+
+  // Nueva función para obtener empleados base de los programadores filtrados
+  const getFilteredEmployeesByFramework = () => {
+    // frameworkResults son programadores, employees son todos los empleados
+    return employees.filter(emp =>
+      emp.type === 'programmer' &&
+      frameworkResults.some(prog => prog.employee_id === emp.id)
+    );
+  };
+
   if (loading) {
     return <EmployeeLoading />;
   }
@@ -336,12 +378,44 @@ const Employees = () => {
         renderSpecificFields={renderSpecificFields}
       />
       
-      <EmployeesList 
-        employees={employees}
-        getEmployeeDetails={getEmployeeDetails}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
+      {/* Filtro por framework de gestión */}
+      <EmployeesFrameworkFilter
+        framework={frameworkFilter}
+        onFrameworkChange={handleFrameworkChange}
+        onSearch={handleFrameworkSearch}
+        onClear={handleFrameworkClear}
+        loading={frameworkLoading}
+        resultCount={frameworkResults.length}
       />
+
+      {/* Lógica actualizada para manejo de resultados */}
+      {frameworkLoading ? (
+        <EmployeeLoading />
+      ) : hasFrameworkSearch && frameworkFilter ? (
+        // Solo mostrar resultados filtrados o mensaje si se realizó una búsqueda
+        frameworkResults.length > 0 ? (
+          <EmployeesList
+            employees={getFilteredEmployeesByFramework()}
+            getEmployeeDetails={getEmployeeDetails}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
+        ) : (
+          <Box sx={{ textAlign: 'center', py: 5 }}>
+            <Typography variant="h6" color="text.secondary">
+              No se encontraron programadores para el framework "{frameworkFilter}"
+            </Typography>
+          </Box>
+        )
+      ) : (
+        // Si no hay búsqueda activa, mostrar todos los empleados
+        <EmployeesList
+          employees={employees}
+          getEmployeeDetails={getEmployeeDetails}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+        />
+      )}
     </Box>
   );
 };
