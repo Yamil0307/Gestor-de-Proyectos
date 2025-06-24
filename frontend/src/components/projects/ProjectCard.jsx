@@ -2,6 +2,26 @@ import React from 'react';
 import { Card, CardContent, CardActions, Typography, Button, Chip, Box } from '@mui/material';
 import { formatDate } from '../../utils/dateUtils';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
+const downloadProjectTxt = async (projectId) => {
+  try {
+    const response = await fetch(`${API_URL}/projects/${projectId}/export-txt`);
+    if (!response.ok) throw new Error('No se pudo descargar el archivo');
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `proyecto_${projectId}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    alert('Error al descargar el archivo: ' + error.message);
+  }
+};
+
 const ProjectCard = ({ project, onEdit, onDelete }) => {
   // Determinar detalles específicos según tipo de proyecto
   const renderSpecificDetails = () => {
@@ -63,6 +83,9 @@ const ProjectCard = ({ project, onEdit, onDelete }) => {
       <CardActions>
         <Button size="small" onClick={() => onEdit(project)}>Editar</Button>
         <Button size="small" color="error" onClick={() => onDelete(project)}>Eliminar</Button>
+        <Button size="small" color="secondary" onClick={() => downloadProjectTxt(project.id)}>
+          Exportar
+        </Button>
       </CardActions>
     </Card>
   );

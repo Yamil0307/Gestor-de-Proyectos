@@ -4,6 +4,8 @@ from typing import List
 from app.database.database import get_db
 from app.api import operations
 from app.schemas import schemas
+from fastapi.responses import StreamingResponse
+from app.api.operations.utils import format_project_to_txt
 
 router = APIRouter(prefix="/projects", tags=["projects"])
 
@@ -52,3 +54,16 @@ def get_project_with_details(project_id: int, db: Session = Depends(get_db)):
     if db_project is None:
         raise HTTPException(status_code=404, detail="Project not found")
     return db_project
+
+@router.get("/{project_id}/export-txt")
+def export_project_txt(project_id: int, db: Session = Depends(get_db)):
+    project_with_details = operations.get_project_with_details(db, project_id=project_id)
+    if project_with_details is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+    txt_content = format_project_to_txt(db, project_with_details)
+    filename = f"proyecto_{project_id}.txt"
+    return StreamingResponse(
+        iter([txt_content]),
+        media_type="text/plain",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )

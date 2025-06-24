@@ -143,3 +143,56 @@ def get_project_by_programmer_identity(db: Session, identity_card: str):
     ).first()
     
     return project  # Puede ser None si el equipo no está asignado a un proyecto
+
+def format_project_to_txt(db: Session, project_with_details: schemas.ProjectWithDetails) -> str:
+    """Formatea la información completa de un proyecto y su equipo a texto plano"""
+    project = project_with_details.project
+    lines = []
+    lines.append(f"Nombre del proyecto: {project.name}")
+    lines.append(f"Descripción: {project.description or '-'}")
+    lines.append(f"Fecha de inicio: {getattr(project, 'start_date', '-')}")
+    lines.append(f"Fecha de fin: {getattr(project, 'end_date', '-')}")
+    lines.append(f"Tiempo estimado (horas): {project.estimated_time}")
+    lines.append(f"Precio: {project.price}")
+    lines.append("")
+    lines.append(f"Tipo de proyecto: {project.type}")
+
+    # Detalles específicos según tipo
+    if project.type == "management" and project_with_details.management_details:
+        md = project_with_details.management_details
+        lines.append("---- Detalles de Gestión ----")
+        lines.append(f"Base de datos: {md.database_type}")
+        lines.append(f"Lenguaje de programación: {md.programming_language}")
+        lines.append(f"Framework: {md.framework}")
+    elif project.type == "multimedia" and project_with_details.multimedia_details:
+        mm = project_with_details.multimedia_details
+        lines.append("---- Detalles Multimedia ----")
+        lines.append(f"Herramienta de desarrollo: {mm.development_tool}")
+
+    # Equipo
+    team = db.query(models.Team).filter(models.Team.id == project.team_id).first()
+    lines.append("\n=== Equipo Asociado ===")
+    lines.append(f"Nombre del equipo: {team.name if team else '-'}")
+
+    # Líder
+    leader_name = "-"
+    if team and team.leader_id:
+        leader = db.query(models.Leader).filter(models.Leader.employee_id == team.leader_id).first()
+        if leader:
+            employee = db.query(models.Employee).filter(models.Employee.id == leader.employee_id).first()
+            if employee:
+                leader_name = employee.name
+    lines.append(f"Líder: {leader_name}")
+
+    # Programadores
+    lines.append("Programadores:")
+    if team:
+        from app.api.operations.team_operations import get_team_members
+        programmers = get_team_members(db, team.id)
+        for prog in programmers:
+            name = prog["employee"]["name"]
+            lines.append(f"  - {name}")
+    else:
+        lines.append("  -")
+
+    return "\n".join(lines)
