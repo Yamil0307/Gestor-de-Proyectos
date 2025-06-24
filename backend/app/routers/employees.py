@@ -9,8 +9,8 @@ from app.api.operations import (
     get_employees as get_employees_op,
     update_employee as update_employee_op,
     delete_employee as delete_employee_op,
-    calculate_salary as calculate_salary_op
 )
+from app.api.operations.utils import calculate_salary
 from app.schemas import schemas
 
 router = APIRouter(prefix="/employees", tags=["employees"])
@@ -127,15 +127,13 @@ def delete_employee(employee_id: int, db: Session = Depends(get_db)):
 @router.get("/{employee_id}/salary", response_model=float)
 def calculate_employee_salary(employee_id: int, db: Session = Depends(get_db)):
     try:
-        # Verificar si el empleado existe
         existing_employee = get_employee_op(db, employee_id=employee_id)
         if existing_employee is None:
             raise HTTPException(
                 status_code=404, 
                 detail=f"Empleado con ID {employee_id} no encontrado"
             )
-        
-        salary = calculate_salary_op(db, employee_id=employee_id)
+        salary = calculate_salary(db, employee_id)
         return salary
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))

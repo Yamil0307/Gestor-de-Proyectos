@@ -26,6 +26,11 @@ def count_projects_by_type(db: Session = Depends(get_db)):
 def get_highest_paid_employees(limit: int = 5, db: Session = Depends(get_db)):
     return operations.get_highest_paid_employees(db, limit=limit)
 
+@analytics_router.get("/total-salary")
+def get_total_salary(db: Session = Depends(get_db)):
+    total = operations.calculate_total_salary(db)  # Suponiendo que hay una función para esto
+    return {"total": total}
+
 # ================= MANAGEMENT PROJECTS ROUTES =================
 management_projects_router = APIRouter(prefix="/management-projects", tags=["management-projects"])
 

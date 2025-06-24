@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from app.models import models
 from app.schemas import schemas
+from app.api.operations.utils import calculate_salary
 
 # ---- Operaciones CRUD para Empleados ----
 def create_employee(db: Session, employee: schemas.EmployeeCreate):
@@ -35,3 +36,10 @@ def delete_employee(db: Session, employee_id: int):
         db.delete(db_employee)
         db.commit()
     return db_employee
+
+def calculate_total_salary(db):
+    employees = db.query(models.Employee).all()
+    total = 0
+    for emp in employees:
+        total += calculate_salary(db, emp.id)
+    return total

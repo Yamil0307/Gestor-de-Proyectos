@@ -10,34 +10,53 @@ from app.api.operations import employee_operations, programmer_operations, leade
 def calculate_salary(db: Session, employee_id: int) -> float:
     """
     Calcula el salario total de un empleado basado en su rol:
-    - Programadores: salario base + 200 por cada lenguaje que dominan
-    - Líderes: salario base + 300 por cada año de experiencia + 500 por cada proyecto liderado
+    
+    Programador:
+    salario = salario_básico + 5% del precio del proyecto + 3 * cantidad_lenguajes
+    
+    Líder:
+    salario = salario_básico + 10% del precio del proyecto + 5 * años_experiencia
+    
+    Si no tiene proyecto:
+    Programador: salario_básico + 3 * cantidad_lenguajes
+    Líder: salario_básico + 5 * años_experiencia
     """
-    employee = employee_operations.get_employee(db, employee_id)
+    employee = db.query(models.Employee).filter(models.Employee.id == employee_id).first()
     if not employee:
-        raise ValueError(f"Empleado con ID {employee_id} no encontrado en la base de datos")
-    
-    total_salary = employee.base_salary
-    
+        raise ValueError("Empleado no encontrado")
+
+    base_salary = employee.base_salary
+    total_salary = base_salary
+
     if employee.type == "programmer":
-        programmer = programmer_operations.get_programmer(db, employee_id)
-        if not programmer:
-            raise ValueError(f"Datos de programador no encontrados para el empleado con ID {employee_id}")
-        # Obtener los lenguajes del programador
-        languages = db.query(models.ProgrammerLanguage).filter(
+        programmer = db.query(models.Programmer).filter(models.Programmer.employee_id == employee_id).first()
+        # Cantidad de lenguajes
+        languages_count = db.query(models.ProgrammerLanguage).filter(
             models.ProgrammerLanguage.programmer_id == employee_id
-        ).all()
-        languages_count = len(languages)
-        total_salary += languages_count * 200
-    
+        ).count()
+        # Proyecto asignado
+        from app.api.operations.utils import get_project_by_programmer_identity
+        project = None
+        try:
+            project = get_project_by_programmer_identity(db, employee.identity_card)
+        except Exception:
+            project = None
+        if project:
+            total_salary += 0.05 * project.price
+        total_salary += 3 * languages_count
+
     elif employee.type == "leader":
-        leader = leader_operations.get_leader(db, employee_id)
-        if not leader:
-            raise ValueError(f"Datos de líder no encontrados para el empleado con ID {employee_id}")
-        total_salary += leader.years_experience * 300
-        total_salary += leader.projects_led * 500
-    
-    return total_salary
+        leader = db.query(models.Leader).filter(models.Leader.employee_id == employee_id).first()
+        years_exp = leader.years_experience if leader else 0
+        # Proyecto asignado
+        project = db.query(models.Project).filter(models.Project.team_id == 
+            db.query(models.Team).filter(models.Team.leader_id == employee_id).first().id
+        ).first() if db.query(models.Team).filter(models.Team.leader_id == employee_id).first() else None
+        if project:
+            total_salary += 0.10 * project.price
+        total_salary += 5 * years_exp
+
+    return float(total_salary)
 
 def get_earliest_finishing_project(db: Session):
     """Obtiene el proyecto que termina más pronto (menor tiempo estimado)"""
@@ -196,3 +215,23 @@ def format_project_to_txt(db: Session, project_with_details: schemas.ProjectWith
         lines.append("  -")
 
     return "\n".join(lines)
+
+from fastapi import APIRouter, Depends
+from app.database.database import get_db
+from sqlalchemy.orm import Session
+
+router = APIRouter(prefix="/analytics", tags=["analytics"])
+
+@router.get("/total-salary")
+def get_total_salary(db: Session = Depends(get_db)):
+    """
+    Devuelve el total de la nómina mensual sumando el salario de todos los empleados.
+    """
+    from app.api.operations.utils import calculate_salary
+    from app.api.operations import employee_operations
+
+    employees = employee_operations.get_employees(db)
+    total = 0
+    for emp in employees:
+        total += calculate_salary(db, emp.id)
+    return {"total": total}

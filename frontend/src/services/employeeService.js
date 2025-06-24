@@ -118,58 +118,21 @@ export const employeeService = {
     }
   },
 
-  // Calcular el total de la nómina mensual - versión corregida
+  // Calcular el total de la nómina mensual
   async getTotalMonthlySalary() {
     try {
-      // Si existe un endpoint específico, usarlo primero
-      try {
-        const response = await api.get('/analytics/total-salary');
-        if (response.data && typeof response.data.total === 'number') {
-          return response.data.total;
-        } else if (typeof response.data === 'number') {
-          return response.data; // Por si el endpoint devuelve directamente el número
-        }
-      } catch (specificError) {
-        // Si falla, continuamos con el método alternativo
-        console.log('Endpoint específico no disponible, usando método alternativo');
+      const response = await api.get('/analytics/total-salary');
+      if (response.data && typeof response.data.total === 'number') {
+        return response.data.total;
       }
-      
-      // Método alternativo: Sumar salarios de los empleados mejor pagados
-      const highestPaidEmployees = await this.getHighestPaidEmployees();
-      
-      if (Array.isArray(highestPaidEmployees) && highestPaidEmployees.length > 0) {
-        let totalSalary = 0;
-        for (const employee of highestPaidEmployees) {
-          // Verificar si hay total_salary (formato del backend) o salary (posible formato alternativo)
-          if (employee) {
-            const salaryValue = employee.total_salary || employee.salary || 0;
-            totalSalary += parseFloat(salaryValue) || 0;
-          }
-        }
-        return totalSalary;
+      // Fallback: si el backend devuelve solo el número
+      if (typeof response.data === 'number') {
+        return response.data;
       }
-      
-      // Si también falla, intentar con todos los empleados
-      const employees = await this.getEmployees();
-      if (!Array.isArray(employees)) return 0;
-      
-      let salarySum = 0;
-      for (const employee of employees) {
-        try {
-          const salaryData = await this.getEmployeeSalary(employee.id);
-          // El backend podría devolver directamente un número o un objeto con propiedad
-          const salary = typeof salaryData === 'number' ? salaryData : 
-                        (salaryData && typeof salaryData.salary === 'number' ? salaryData.salary : 0);
-          salarySum += parseFloat(salary) || 0;
-        } catch (e) {
-          console.log(`Error obteniendo salario para empleado ${employee.id}:`, e);
-        }
-      }
-      
-      return salarySum;
+      return 0;
     } catch (error) {
-      console.error('Error al calcular la nómina total:', error);
-      return 0; // Devolver 0 en caso de error
+      console.error('Error al obtener el total de nómina mensual:', error);
+      return 0;
     }
   }
 };
