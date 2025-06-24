@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Box, Button, Typography } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import { projectService } from '../services/projectService';
+import { programmerService } from '../services/programmerService';
 import { useNotification } from '../context/NotificationContext';
 import { useConfirmation } from '../context/ConfirmationContext';
 import { processApiError } from '../utils/errorUtils';
@@ -11,6 +12,25 @@ import ProjectLoading from '../components/projects/ProjectLoading';
 import ProjectFilters from '../components/projects/ProjectFilters';
 import '../pages/Projects.css';
 
+// Hook personalizado para debounce
+const useDebounce = (value, delay) => {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    // Establecer temporizador para retrasar actualización del valor
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    // Limpiar temporizador si el valor cambia antes del retraso
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+};
+
 const Projects = ({ onDataChange }) => {
   const [projects, setProjects] = useState([]);
   const [filteredProjects, setFilteredProjects] = useState([]);
@@ -19,8 +39,13 @@ const Projects = ({ onDataChange }) => {
   const [editingProject, setEditingProject] = useState(null);
   const [filters, setFilters] = useState({
     search: '',
-    type: ''
+    type: '',
+    identityCard: ''
   });
+  const [isFiltering, setIsFiltering] = useState(false);
+  
+  // Mantener el debounce pero no usarlo para búsqueda automática
+  const debouncedIdentityCard = useDebounce(filters.identityCard, 800);
   
   const { showSuccess, showError } = useNotification();
   const { showConfirmation } = useConfirmation();
@@ -29,10 +54,13 @@ const Projects = ({ onDataChange }) => {
     loadProjects();
   }, []);
 
-  // Aplicar filtros cuando cambien los proyectos o los filtros
+  // Aplicar filtros regulares cuando cambien los proyectos, tipo o búsqueda por nombre
   useEffect(() => {
-    applyFilters();
-  }, [filters, projects]);
+    // Si no hay carnet o está en proceso de filtrado, aplicar filtros regulares
+    if (!filters.identityCard || filters.identityCard.trim() === '') {
+      applyRegularFilters();
+    }
+  }, [filters.search, filters.type, projects]);
 
   const loadProjects = async () => {
     setLoading(true);
@@ -62,6 +90,7 @@ const Projects = ({ onDataChange }) => {
       }));
       
       setProjects(fullProjectsData);
+      setFilteredProjects(fullProjectsData);
     } catch (error) {
       console.error('Error al cargar proyectos:', error);
       const { message } = processApiError(error, { defaultMessage: 'Error al cargar proyectos' });
@@ -71,7 +100,8 @@ const Projects = ({ onDataChange }) => {
     }
   };
 
-  const applyFilters = () => {
+  // Filtros regulares (nombre y tipo)
+  const applyRegularFilters = () => {
     let result = [...projects];
     
     // Filtrar por tipo de proyecto
@@ -89,6 +119,52 @@ const Projects = ({ onDataChange }) => {
     }
     
     setFilteredProjects(result);
+    setIsFiltering(false);
+  };
+
+  // Búsqueda explícita por carnet (cuando se presiona Enter)
+  const searchByIdentityCard = async (identityCard) => {
+    if (!identityCard || identityCard.trim() === '') {
+      applyRegularFilters();
+      return;
+    }
+    
+    setIsFiltering(true);
+    try {
+      // Obtenemos el proyecto por carnet de identidad
+      const project = await programmerService.getProjectByProgrammerIdentity(identityCard.trim());
+      
+      // Si encontramos un proyecto, aplicamos filtros adicionales a este único resultado
+      if (project) {
+        // Buscamos el proyecto completo en nuestra lista de proyectos (con detalles)
+        const projectWithDetails = projects.find(p => p.id === project.id);
+        
+        let result = projectWithDetails ? [projectWithDetails] : [project];
+        
+        // Aplicamos filtros adicionales si existen
+        if (filters.type && result[0].type !== filters.type) {
+          result = [];
+        }
+        
+        if (filters.search) {
+          const searchLower = filters.search.toLowerCase();
+          result = result.filter(p => 
+            p.name?.toLowerCase().includes(searchLower) || 
+            p.description?.toLowerCase().includes(searchLower)
+          );
+        }
+        
+        setFilteredProjects(result);
+      } else {
+        setFilteredProjects([]);
+      }
+    } catch (error) {
+      console.error('Error al filtrar por carnet:', error);
+      // No mostramos error en notificación, solo dejamos la lista vacía
+      setFilteredProjects([]);
+    } finally {
+      setIsFiltering(false);
+    }
   };
 
   const handleFilterChange = (name, value) => {
@@ -96,13 +172,20 @@ const Projects = ({ onDataChange }) => {
       ...prev,
       [name]: value
     }));
+    
+    // Si se está limpiando el campo de carnet
+    if (name === 'identityCard' && value === '') {
+      applyRegularFilters();
+    }
   };
 
   const clearFilters = () => {
     setFilters({
       search: '',
-      type: ''
+      type: '',
+      identityCard: ''
     });
+    applyRegularFilters();
   };
 
   const handleSubmit = async (formData) => {
@@ -270,20 +353,41 @@ const Projects = ({ onDataChange }) => {
         </Button>
       </Box>
       
-      {/* Filtros - Pasamos el contador de resultados */}
+      {/* Filtros - Pasamos función para búsqueda por carnet */}
       <ProjectFilters 
         filters={filters}
         onFilterChange={handleFilterChange}
         onClearFilters={clearFilters}
         resultCount={filteredProjects.length}
+        loading={isFiltering}
+        onSearchByIdentity={searchByIdentityCard}
       />
       
-      {/* Lista de proyectos */}
-      <ProjectList 
-        projects={filteredProjects}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-      />
+      {/* Mensaje de carga para filtrado */}
+      {isFiltering && (
+        <Box sx={{ textAlign: 'center', py: 2 }}>
+          <Typography variant="body1" color="text.secondary">
+            Buscando proyecto...
+          </Typography>
+        </Box>
+      )}
+      
+      {/* Lista de proyectos o mensaje "No hay resultados" */}
+      {!isFiltering && filteredProjects.length === 0 ? (
+        <Box sx={{ textAlign: 'center', py: 5 }}>
+          <Typography variant="h6" color="text.secondary">
+            {filters.identityCard ? 
+              `No se encontraron proyectos para el programador con carnet ${filters.identityCard}` :
+              "No se encontraron proyectos con los filtros actuales"}
+          </Typography>
+        </Box>
+      ) : (
+        !isFiltering && <ProjectList 
+          projects={filteredProjects}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+        />
+      )}
       
       {/* Modal para crear/editar proyectos */}
       <ProjectFormDialog 

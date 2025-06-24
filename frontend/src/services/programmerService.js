@@ -65,5 +65,31 @@ export const programmerService = {
       });
       throw formattedError;
     }
+  },
+
+  // Obtener los lenguajes de un programador
+  async getProgrammerLanguages(id) {
+    try {
+      const response = await api.get(`/programmers/${id}/languages`);
+      return response.data;
+    } catch (error) {
+      const formattedError = processApiError(error, { 
+        defaultMessage: `Error al obtener los lenguajes del programador con ID ${id}` 
+      });
+      throw formattedError;
+    }
+  },
+
+  // Obtener el proyecto de un programador por su carnet de identidad
+  async getProjectByProgrammerIdentity(identityCard) {
+    try {
+      const response = await api.get(`/programmers/by-identity/${identityCard}/project`);
+      return response.data;
+    } catch (error) {
+      const formattedError = processApiError(error, { 
+        defaultMessage: `No se encontró ningún proyecto asignado al programador con carnet ${identityCard}` 
+      });
+      throw formattedError;
+    }
   }
 };

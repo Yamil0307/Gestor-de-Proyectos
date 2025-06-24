@@ -117,3 +117,29 @@ def get_project_with_details(db: Session, project_id: int):
         result.multimedia_details = multimedia_details
     
     return result
+
+def get_project_by_programmer_identity(db: Session, identity_card: str):
+    """Obtiene el proyecto al que está asignado un programador dado su carnet de identidad"""
+    # Buscar el empleado por su carnet de identidad
+    employee = db.query(models.Employee).filter(
+        models.Employee.identity_card == identity_card,
+        models.Employee.type == "programmer"
+    ).first()
+    
+    if not employee:
+        raise ValueError("No se encontró un programador con ese carnet de identidad")
+    
+    # Buscar si el programador está asignado a algún equipo
+    team_member = db.query(models.TeamMember).filter(
+        models.TeamMember.programmer_id == employee.id
+    ).first()
+    
+    if not team_member:
+        return None  # El programador no está asignado a ningún equipo
+    
+    # Buscar si el equipo está asignado a algún proyecto
+    project = db.query(models.Project).filter(
+        models.Project.team_id == team_member.team_id
+    ).first()
+    
+    return project  # Puede ser None si el equipo no está asignado a un proyecto
