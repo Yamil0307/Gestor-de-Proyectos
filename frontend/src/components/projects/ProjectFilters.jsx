@@ -38,7 +38,6 @@ const ProjectFilters = ({ filters, onFilterChange, onClearFilters, resultCount, 
             label="Tipo de Proyecto"
             onChange={handleChange}
           >
-            <MenuItem value="">Todos</MenuItem>
             <MenuItem value="management">Gestión</MenuItem>
             <MenuItem value="multimedia">Multimedia</MenuItem>
           </Select>

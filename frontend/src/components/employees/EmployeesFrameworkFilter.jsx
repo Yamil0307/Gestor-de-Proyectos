@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, TextField, Button, Chip, CircularProgress } from '@mui/material';
+import { Box, TextField, Button, Chip, CircularProgress, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import SearchIcon from '@mui/icons-material/Search';
 
@@ -9,27 +9,45 @@ const EmployeesFrameworkFilter = ({
   onSearch,
   onClear,
   loading,
-  resultCount
+  resultCount,
+  employeeTypeFilter,
+  onEmployeeTypeFilterChange
 }) => {
   const [input, setInput] = useState(framework);
 
   const handleInputChange = (e) => {
-    // Solo actualizar el input local, no el filtro global
     setInput(e.target.value);
   };
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && input.trim()) {
       e.preventDefault();
-      // Al presionar Enter actualizamos el filtro y ejecutamos la búsqueda
       onFrameworkChange(input.trim());
       onSearch(input.trim());
     }
   };
 
+  // Determinar si hay algún filtro activo
+  const hasActiveFilters = !!input.trim() || !!framework || !!employeeTypeFilter;
+
   return (
     <Box sx={{ mb: 3, p: 2, bgcolor: '#f5f5f5', borderRadius: 1 }}>
       <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+        {/* Filtro por tipo de empleado */}
+        <FormControl size="small" sx={{ minWidth: 180 }}>
+          <InputLabel id="employee-type-filter-label">Tipo de Empleado</InputLabel>
+          <Select
+            labelId="employee-type-filter-label"
+            value={employeeTypeFilter}
+            label="Tipo de Empleado"
+            onChange={e => onEmployeeTypeFilterChange(e.target.value)}
+          >
+            <MenuItem value="programmer">Programadores</MenuItem>
+            <MenuItem value="leader">Líderes</MenuItem>
+          </Select>
+        </FormControl>
+
+        {/* Filtro por framework */}
         <TextField
           name="framework"
           label="Framework de Gestión"
@@ -48,21 +66,22 @@ const EmployeesFrameworkFilter = ({
           }}
           sx={{ minWidth: '250px' }}
         />
-        
+
         <Button
           variant="outlined"
           onClick={() => {
-            setInput(''); // Limpiar el input local
-            onClear(); // Llamar a la función de limpieza
+            setInput('');
+            onClear();
           }}
           size="small"
-          disabled={!input.trim() && !framework}
+          disabled={!hasActiveFilters}
         >
           Limpiar Filtros
         </Button>
       </Box>
       
-      {framework && !loading && (
+      {/* Mostrar el contador solo si hay filtros activos y no está cargando */}
+      {!loading && hasActiveFilters && (
         <Box sx={{ mt: 2 }}>
           <Chip
             icon={<FilterListIcon fontSize="small" />}

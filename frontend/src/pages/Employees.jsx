@@ -43,6 +43,7 @@ const Employees = () => {
   const [frameworkLoading, setFrameworkLoading] = useState(false);
   // Nuevo estado para rastrear si se ha realizado una búsqueda
   const [hasFrameworkSearch, setHasFrameworkSearch] = useState(false);
+  const [employeeTypeFilter, setEmployeeTypeFilter] = useState(''); // '' = todos
 
   useEffect(() => {
     loadAllData();
@@ -348,7 +349,8 @@ const Employees = () => {
   const handleFrameworkClear = () => {
     setFrameworkFilter('');
     setFrameworkResults([]);
-    setHasFrameworkSearch(false); // Reiniciar el indicador de búsqueda
+    setHasFrameworkSearch(false);
+    setEmployeeTypeFilter(''); // <-- Esto limpia el filtro de tipo de empleado también
   };
 
   // Nueva función para obtener empleados base de los programadores filtrados
@@ -359,6 +361,20 @@ const Employees = () => {
       frameworkResults.some(prog => prog.employee_id === emp.id)
     );
   };
+
+  // Calcula los empleados filtrados por ambos filtros
+  const filteredEmployees = employees.filter(emp => {
+    if (!employeeTypeFilter) return true;
+    return emp.type === employeeTypeFilter;
+  });
+
+  // Si hay búsqueda de framework, filtra sobre los resultados de framework
+  const filteredByFrameworkAndType = hasFrameworkSearch && frameworkFilter
+    ? filteredEmployees.filter(emp =>
+        emp.type === 'programmer' &&
+        frameworkResults.some(prog => prog.employee_id === emp.id)
+      )
+    : filteredEmployees;
 
   if (loading) {
     return <EmployeeLoading />;
@@ -385,7 +401,9 @@ const Employees = () => {
         onSearch={handleFrameworkSearch}
         onClear={handleFrameworkClear}
         loading={frameworkLoading}
-        resultCount={frameworkResults.length}
+        resultCount={filteredByFrameworkAndType.length} // <-- Cambiado aquí
+        employeeTypeFilter={employeeTypeFilter}
+        onEmployeeTypeFilterChange={setEmployeeTypeFilter}
       />
 
       {/* Lógica actualizada para manejo de resultados */}
@@ -410,7 +428,7 @@ const Employees = () => {
       ) : (
         // Si no hay búsqueda activa, mostrar todos los empleados
         <EmployeesList
-          employees={employees}
+          employees={filteredByFrameworkAndType}
           getEmployeeDetails={getEmployeeDetails}
           onEdit={handleEdit}
           onDelete={handleDelete}
