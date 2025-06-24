@@ -36,7 +36,8 @@ class Employee(EmployeeBase):
 
 # ---- ESQUEMAS PARA PROGRAMADORES ----
 class ProgrammerBase(BaseModel):
-    category: str = Field(..., pattern="^[ABC]$", description="Categoría: A, B o C")
+    employee_id: int
+    category: str
 
 class ProgrammerCreate(ProgrammerBase):
     employee_data: EmployeeCreate
@@ -63,6 +64,12 @@ class Programmer(ProgrammerBase):
 
     class Config:
         from_attributes = True
+
+class ProgrammerOut(ProgrammerBase):
+    languages: List[str] = []
+
+    class Config:
+        orm_mode = True
 
 # ---- ESQUEMAS PARA LÍDERES ----
 class LeaderBase(BaseModel):

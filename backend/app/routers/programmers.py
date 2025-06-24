@@ -4,6 +4,8 @@ from typing import List
 from app.database.database import get_db
 from app.api import operations
 from app.schemas import schemas
+from app.schemas.schemas import ProgrammerOut
+from app.models import models
 
 router = APIRouter(prefix="/programmers", tags=["programmers"])
 
@@ -21,9 +23,22 @@ def get_programmer(programmer_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Programmer not found")
     return db_programmer
 
-@router.get("/", response_model=List[schemas.Programmer])
-def get_programmers(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    return operations.get_programmers(db, skip=skip, limit=limit)
+@router.get("/", response_model=List[ProgrammerOut])
+def get_programmers(db: Session = Depends(get_db)):
+    programmers = db.query(models.Programmer).all()
+    result = []
+    for prog in programmers:
+        # Obtener lenguajes de este programador
+        languages = db.query(models.ProgrammerLanguage.language).filter(
+            models.ProgrammerLanguage.programmer_id == prog.employee_id
+        ).all()
+        languages_list = [lang[0] for lang in languages]
+        result.append({
+            "employee_id": prog.employee_id,
+            "category": prog.category,
+            "languages": languages_list
+        })
+    return result
 
 @router.put("/{programmer_id}", response_model=schemas.Programmer)
 def update_programmer(programmer_id: int, programmer_update: schemas.ProgrammerUpdate, db: Session = Depends(get_db)):
